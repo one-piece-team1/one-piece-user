@@ -52,12 +52,12 @@ const configs = {
     NAME: packageNameGetter(),
     DESCRIPTION: packageDescriptionGetter(),
     // API
-    PREFIX: process.env.APPAPIPREFIX || 'v1.*',
+    PREFIX: process.env.APPAPIPREFIX || '',
     VERSION: packageVersionGetter(),
-    API_EXPLORER_PATH: process.env.APPAPIEXPLORERPATH || '/api',
+    API_EXPLORER_PATH: process.env.APPAPIEXPLORERPATH || '',
     // Server Setting
     HOST: process.env.APPHOST || 'localhost',
-    PORT: process.env.APPPORT || 8080,
+    PORT: process.env.APPPORT || 7071,
 
     EVENT_STORE_SETTINGS: {
       protocol: process.env.EVENTSTOREPROTOCOL || 'http',
@@ -84,7 +84,7 @@ const configs = {
       userTable: process.env.DBRATETABLE || 'user',
     },
 
-    REDIS_URL: process.env.REDISRATELIMITURL || "redis://127.0.0.1:6379",
+    REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6379",
 
     GEO_CONFIGS: {
       key: process.env.GEOKEY,
