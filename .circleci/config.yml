@@ -1,0 +1,40 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@3.0.1
+
+jobs:
+  build:
+    working_directory: ~/one-piece-user
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-npm
+      - node/install-packages:
+          app-dir: ~/one-piece-user
+          cache-path: node_modules
+          override-ci-command: sudo npm i
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  test:
+    docker:
+      - image: cimg/node:current
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          # no test yet
+          name: Test
+          command: sudo npm run build
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
