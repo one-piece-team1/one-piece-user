@@ -1,4 +1,15 @@
-import { Controller, Delete, Get, Post, Put, UsePipes, ValidationPipe, Request, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Put,
+  UsePipes,
+  ValidationPipe,
+  Request,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import * as Express from 'express';
 @Controller('/users')
@@ -7,21 +18,17 @@ export class UserController {
 
   @Get()
   @UsePipes(ValidationPipe)
-  getRequest(
-    @Request() req: Express.Request,
-  ): Promise<string> {
+  getRequest(@Request() req: Express.Request): Promise<string> {
     return this.userService.getRequest();
   }
 
   @Post()
   @UsePipes(ValidationPipe)
-  postRequest(
-    @Request() req: Express.Request,
-  ): Promise<string> {
+  postRequest(@Request() req: Express.Request): Promise<string> {
     return this.userService.postRequest();
   }
 
-  @Put("/:id")
+  @Put('/:id')
   @UsePipes(ValidationPipe)
   putRequest(
     @Request() req: Express.Request,
@@ -30,7 +37,7 @@ export class UserController {
     return this.userService.putRequest(id);
   }
 
-  @Delete("/:id")
+  @Delete('/:id')
   @UsePipes(ValidationPipe)
   deleteRequest(
     @Request() req: Express.Request,
