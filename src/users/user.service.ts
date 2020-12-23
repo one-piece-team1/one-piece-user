@@ -1,20 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserRepository } from './user.repository';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserCreditDto } from './dto';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './interfaces';
+import * as IUser from './interfaces';
 
 @Injectable()
 export class UserService {
-  public async getRequest(): Promise<string> {
-    return 'Hello World!';
+  constructor(
+    @InjectRepository(UserRepository)
+    private userRepository: UserRepository,
+    private jwtService: JwtService,
+  ) {}
+
+  async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
+    return this.userRepository.signUp(userCreditDto);
   }
 
-  public async postRequest(): Promise<string> {
-    return 'Hello World!';
-  }
+  async signIn(userCreditDto: UserCreditDto): Promise<IUser.SignInResponse> {
+    const username = await this.userRepository.validateUserPassword(
+      userCreditDto,
+    );
+    if (username === null) {
+      throw new UnauthorizedException('Invalid credentials');
+    } else {
+      const payload: JwtPayload = { username };
+      const accessToken = await this.jwtService.sign(payload);
 
-  public async putRequest(id: number): Promise<string> {
-    return 'Hello World' + id;
-  }
-
-  public async delRequest(id: number): Promise<string> {
-    return 'Hello World' + id;
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'signin success',
+        accessToken,
+      };
+    }
   }
 }

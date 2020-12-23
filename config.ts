@@ -59,6 +59,11 @@ const configs = {
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
 
+    JWT: {
+      KEY: process.env.JWTKEY || 'lib',
+      SECRET: process.env.JWTSECRET || 'lib',
+    },
+
     EVENT_STORE_SETTINGS: {
       protocol: process.env.EVENTSTOREPROTOCOL || 'http',
       hostname: process.env.EVENTSTOREHOSTNAME || '0.0.0.0',

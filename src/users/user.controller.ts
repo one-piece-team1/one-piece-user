@@ -1,48 +1,46 @@
 import {
   Controller,
-  Delete,
-  Get,
   Post,
-  Put,
-  UsePipes,
+  Body,
   ValidationPipe,
-  Request,
-  Param,
-  ParseIntPipe,
+  Get,
+  UseGuards,
 } from '@nestjs/common';
+import { UserCreditDto } from './dto';
 import { UserService } from './user.service';
-import * as Express from 'express';
-@Controller('/users')
+import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from './get-user.decorator';
+import { User } from './user.entity';
+import * as IUser from './interfaces';
+
+@Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private userService: UserService) {}
 
-  @Get()
-  @UsePipes(ValidationPipe)
-  getRequest(@Request() req: Express.Request): Promise<string> {
-    return this.userService.getRequest();
+  @Get('/infos')
+  @UseGuards(AuthGuard())
+  test(
+    @GetUser() user: User,
+  ): { statusCode: string; message: string; user: IUser.UserInfo } {
+    const { id, username } = user;
+    return {
+      statusCode: 'success',
+      message: 'auth test',
+      user: { id, username },
+    };
   }
 
-  @Post()
-  @UsePipes(ValidationPipe)
-  postRequest(@Request() req: Express.Request): Promise<string> {
-    return this.userService.postRequest();
+  @Post('/signup')
+  signUp(
+    @Body(ValidationPipe) userCreditDto: UserCreditDto,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.signUp(userCreditDto);
   }
 
-  @Put('/:id')
-  @UsePipes(ValidationPipe)
-  putRequest(
-    @Request() req: Express.Request,
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<string> {
-    return this.userService.putRequest(id);
-  }
-
-  @Delete('/:id')
-  @UsePipes(ValidationPipe)
-  deleteRequest(
-    @Request() req: Express.Request,
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<string> {
-    return this.userService.delRequest(id);
+  @Post('/signin')
+  signIn(
+    @Body(ValidationPipe) userCreditDto: UserCreditDto,
+  ): Promise<IUser.SignInResponse> {
+    return this.userService.signIn(userCreditDto);
   }
 }
