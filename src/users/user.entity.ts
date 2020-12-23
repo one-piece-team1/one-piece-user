@@ -4,32 +4,56 @@ import {
   PrimaryGeneratedColumn,
   Column,
   Unique,
-  OneToMany,
   Index,
+  BeforeInsert,
+  BeforeUpdate,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 @Entity()
 @Unique(['username', 'email'])
 export class User extends BaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column()
+  @Column({ type: 'varchar', default: 'user', nullable: false, insert: false })
+  role: string;
+
+  @Column({ type: 'varchar', nullable: false })
+  @Index({ unique: true })
   username: string;
 
-  @Column()
+  @Column({ type: 'varchar', nullable: false })
   @Index({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: false })
   password: string;
 
-  @Column()
+  @Column({ nullable: false })
   salt: string;
+
+  @CreateDateColumn({ nullable: false })
+  createdAt: Date;
+
+  @UpdateDateColumn({ nullable: false })
+  updatedAt: Date;
 
   async validatePassword(password: string): Promise<boolean> {
     const hash = await bcrypt.hash(password, this.salt);
     return hash === this.password;
+  }
+
+  @BeforeInsert()
+  updateWhenInsert() {
+    this.createdAt = new Date();
+    this.updatedAt = new Date();
+  }
+
+  @BeforeUpdate()
+  updateDateWhenUpdate() {
+    this.updatedAt = new Date();
   }
 }

@@ -4,30 +4,23 @@ import {
   Body,
   ValidationPipe,
   Get,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { UserCreditDto } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
-import { GetUser } from './get-user.decorator';
-import { User } from './user.entity';
 import * as IUser from './interfaces';
+import * as Express from 'express';
 
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('/infos')
+  @Get('/info')
   @UseGuards(AuthGuard())
-  test(
-    @GetUser() user: User,
-  ): { statusCode: string; message: string; user: IUser.UserInfo } {
-    const { id, username } = user;
-    return {
-      statusCode: 'success',
-      message: 'auth test',
-      user: { id, username },
-    };
+  getUser(@Request() req: Express.Request): IUser.ResponseBase {
+    return this.userService.getUser(req.user);
   }
 
   @Post('/signup')

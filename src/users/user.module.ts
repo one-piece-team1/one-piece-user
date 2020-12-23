@@ -5,24 +5,31 @@ import { PassportModule } from '@nestjs/passport';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
-import { JwtStrategy } from './jwt/jwt-strategy';
+import { JwtStrategy } from './jwt-strategy';
 import { config } from '../../config';
 
 @Module({
   imports: [
     PassportModule.register({
       defaultStrategy: 'jwt',
+      property: 'user',
+      session: false,
     }),
     JwtModule.register({
       secret: config.JWT.SECRET,
       signOptions: {
-        expiresIn: 3600,
+        algorithm: 'HS256',
+        expiresIn: '7d',
+        issuer: 'one-piece',
+      },
+      verifyOptions: {
+        algorithms: ['HS256'],
       },
     }),
     TypeOrmModule.forFeature([UserRepository]),
   ],
   controllers: [UserController],
   providers: [UserService, JwtStrategy],
-  exports: [JwtStrategy, PassportModule],
+  exports: [PassportModule],
 })
 export class UserModule {}
