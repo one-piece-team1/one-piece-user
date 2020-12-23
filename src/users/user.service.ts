@@ -31,7 +31,7 @@ export class UserService {
       if (username === null) {
         throw new UnauthorizedException('Invalid credentials');
       } else {
-        const payload: JwtPayload = { username };
+        const payload: JwtPayload = { username, licence: 'onepiece' };
         const accessToken = await this.jwtService.sign(payload);
 
         return {
@@ -53,12 +53,32 @@ export class UserService {
   }
 
   getUser(user: IUser.UserInfo): IUser.ResponseBase {
+    if (!user) {
+      throw new UnauthorizedException('No user existed');
+    }
     return {
       statusCode: 200,
       status: 'success',
       message: {
-        role: user.role,
-        username: user.username,
+        user: {
+          role: user.role,
+          username: user.username,
+          licence: 'onepiece',
+          email: user.email,
+        },
+      },
+    };
+  }
+
+  googleLogin(user: IUser.UserInfo): IUser.ResponseBase {
+    if (!user) {
+      throw new UnauthorizedException('No user existed');
+    }
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: {
+        user,
       },
     };
   }

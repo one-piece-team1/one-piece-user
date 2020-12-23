@@ -5,7 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
-import { JwtStrategy } from './jwt-strategy';
+import { GoogleStrategy, JwtStrategy } from './strategy';
 import { config } from '../../config';
 
 @Module({
@@ -13,7 +13,7 @@ import { config } from '../../config';
     PassportModule.register({
       defaultStrategy: 'jwt',
       property: 'user',
-      session: false,
+      session: true,
     }),
     JwtModule.register({
       secret: config.JWT.SECRET,
@@ -29,7 +29,7 @@ import { config } from '../../config';
     TypeOrmModule.forFeature([UserRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy],
+  providers: [UserService, JwtStrategy, GoogleStrategy],
   exports: [PassportModule],
 })
 export class UserModule {}

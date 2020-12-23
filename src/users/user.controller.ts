@@ -18,7 +18,7 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get('/info')
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard(['jwt']))
   getUser(@Request() req: Express.Request): IUser.ResponseBase {
     return this.userService.getUser(req.user);
   }
@@ -35,5 +35,18 @@ export class UserController {
     @Body(ValidationPipe) userCreditDto: UserCreditDto,
   ): Promise<IUser.SignInResponse> {
     return this.userService.signIn(userCreditDto);
+  }
+
+  @Get('/google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth(): void {
+    // didn't do anything due to i don't need to do any action
+    return;
+  }
+
+  @Get('/google/redirect')
+  @UseGuards(AuthGuard('google'))
+  googleAuthRedirect(@Request() req: Express.Request): IUser.ResponseBase {
+    return this.userService.googleLogin(req.user);
   }
 }

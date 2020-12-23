@@ -64,6 +64,12 @@ const configs = {
       SECRET: process.env.JWTSECRET || 'lib',
     },
 
+    GOOGLE: {
+      ID: process.env.GOOGLEAUTHID,
+      SECRET: process.env.GOOGLEAUTHSECRET,
+      CALLBACKURL: process.env.GOOGLEAUTHCALLBACKURL,
+    },
+
     EVENT_STORE_SETTINGS: {
       protocol: process.env.EVENTSTOREPROTOCOL || 'http',
       hostname: process.env.EVENTSTOREHOSTNAME || '0.0.0.0',
@@ -101,7 +107,7 @@ const configs = {
     PORT: process.env.APPPORT || 7071,
   },
   test: {
-    PORT: 7072,
+    PORT: 7071,
   },
 };
 
