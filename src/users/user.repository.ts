@@ -10,6 +10,12 @@ import * as IUser from './interfaces';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
+  /**
+   * @description Sign up user repository action
+   * @public
+   * @param {UserCreditDto} userCreditDto
+   * @returns {Promise<IUser.ResponseBase>}
+   */
   async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
     const { username, email, password } = userCreditDto;
     const user = new User();
@@ -32,6 +38,12 @@ export class UserRepository extends Repository<User> {
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
+  /**
+   * @description Validate user password
+   * @public
+   * @param {UserCreditDto} userCreditDto
+   * @returns {Promise<string>}
+   */
   async validateUserPassword(userCreditDto: UserCreditDto): Promise<string> {
     const { username, password } = userCreditDto;
     const user = await this.findOne({ username });
@@ -42,6 +54,13 @@ export class UserRepository extends Repository<User> {
     }
   }
 
+  /**
+   * @description hash password
+   * @private
+   * @param {string} password
+   * @param {string} string
+   * @returns {Promise<string>}
+   */
   private async hashPassword(password: string, salt: string): Promise<string> {
     return bcrypt.hash(password, salt);
   }

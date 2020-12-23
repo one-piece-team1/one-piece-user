@@ -19,10 +19,22 @@ export class UserService {
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * @description Sign up user service action
+   * @public
+   * @param {UserCreditDto} userCreditDto
+   * @returns {Promise<IUser.ResponseBase>}
+   */
   async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
     return this.userRepository.signUp(userCreditDto);
   }
 
+  /**
+   * @description Sign in user service action
+   * @public
+   * @param {UserCreditDto} userCreditDto
+   * @returns {Promise<IUser.SignInResponse>}
+   */
   async signIn(userCreditDto: UserCreditDto): Promise<IUser.SignInResponse> {
     try {
       const username = await this.userRepository.validateUserPassword(
@@ -52,6 +64,12 @@ export class UserService {
     }
   }
 
+  /**
+   * @description Get user information
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {IUser.ResponseBase}
+   */
   getUser(user: IUser.UserInfo): IUser.ResponseBase {
     if (!user) {
       throw new UnauthorizedException('No user existed');
@@ -70,6 +88,12 @@ export class UserService {
     };
   }
 
+  /**
+   * @description Get user information from google login callback redirect
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {IUser.ResponseBase}
+   */
   googleLogin(user: IUser.UserInfo): IUser.ResponseBase {
     if (!user) {
       throw new UnauthorizedException('No user existed');

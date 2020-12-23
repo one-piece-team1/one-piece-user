@@ -18,6 +18,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
+  /**
+   * @description Validate JWT is malform or not and get user information
+   * @public
+   * @param {JwtPayload} payload
+   * @returns {Promise<User | JwtPayload>}
+   */
   async validate(payload: JwtPayload): Promise<User | JwtPayload> {
     const { username, licence } = payload;
     if (licence === 'google') {

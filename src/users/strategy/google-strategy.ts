@@ -15,6 +15,15 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
+  /**
+   * @description Validate google strategy when callback arrives
+   * @public
+   * @param {string} accessToken
+   * @param {string} refreshToken
+   * @param {any} profile
+   * @param {VerifyCallback} done
+   * @returns {Promise<void>}
+   */
   async validate(
     accessToken: string,
     refreshToken: string,
