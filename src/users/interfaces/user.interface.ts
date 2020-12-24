@@ -3,4 +3,5 @@ export interface UserInfo {
   role?: string;
   username?: string;
   email?: string;
+  licence?: string;
 }

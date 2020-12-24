@@ -5,7 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
-import { GoogleStrategy, JwtStrategy } from './strategy';
+import { GoogleStrategy, JwtStrategy, FacebookStrategy } from './strategy';
 import { config } from '../../config';
 
 @Module({
@@ -29,7 +29,7 @@ import { config } from '../../config';
     TypeOrmModule.forFeature([UserRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, GoogleStrategy],
+  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy],
   exports: [PassportModule],
 })
 export class UserModule {}

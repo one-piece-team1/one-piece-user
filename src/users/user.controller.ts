@@ -6,6 +6,7 @@ import {
   Get,
   Request,
   UseGuards,
+  HttpStatus,
 } from '@nestjs/common';
 import { UserCreditDto } from './dto';
 import { UserService } from './user.service';
@@ -39,14 +40,26 @@ export class UserController {
 
   @Get('/google')
   @UseGuards(AuthGuard('google'))
-  googleAuth(): void {
+  googleAuth(): number {
     // didn't do anything due to i don't need to do any action
-    return;
+    return HttpStatus.OK;
   }
 
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Request() req: Express.Request): IUser.ResponseBase {
     return this.userService.googleLogin(req.user);
+  }
+
+  @Get('/facebook')
+  @UseGuards(AuthGuard('facebook'))
+  fbAuth(@Request() req: Express.Request): number {
+    return HttpStatus.OK;
+  }
+
+  @Get('/facebook/redirect')
+  @UseGuards(AuthGuard('facebook'))
+  fbAuthRedirect(@Request() req: Express.Request): IUser.ResponseBase {
+    return this.userService.fbLogin(req.user);
   }
 }

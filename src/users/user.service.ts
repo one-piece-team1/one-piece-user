@@ -81,7 +81,7 @@ export class UserService {
         user: {
           role: user.role,
           username: user.username,
-          licence: 'onepiece',
+          licence: user.licence || 'onepiece',
           email: user.email,
         },
       },
@@ -95,6 +95,25 @@ export class UserService {
    * @returns {IUser.ResponseBase}
    */
   googleLogin(user: IUser.UserInfo): IUser.ResponseBase {
+    if (!user) {
+      throw new UnauthorizedException('No user existed');
+    }
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: {
+        user,
+      },
+    };
+  }
+
+  /**
+   * @description Get user information from facebook login callback redirect
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {IUser.ResponseBase}
+   */
+  fbLogin(user: IUser.UserInfo): IUser.ResponseBase {
     if (!user) {
       throw new UnauthorizedException('No user existed');
     }

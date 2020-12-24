@@ -25,13 +25,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
    * @returns {Promise<User | JwtPayload>}
    */
   async validate(payload: JwtPayload): Promise<User | JwtPayload> {
-    const { username, licence } = payload;
+    const { role, username, licence, email } = payload;
+
     if (licence === 'google') {
       return {
-        role: payload.role,
-        username: payload.username,
-        licence: payload.licence,
-        email: payload.email,
+        role,
+        username,
+        licence,
+        email,
+      };
+    }
+    if (licence === 'facebook') {
+      return {
+        role,
+        username,
+        licence,
+        email,
       };
     }
     const user = await this.userRepository.findOne({ where: { username } });
