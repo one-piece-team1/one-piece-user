@@ -58,6 +58,11 @@ const configs = {
     // Server Setting
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
+    
+    COMPANY_LINK: {
+      FB: "http://www.facebook.com/",
+      TWITTER: "http://www.twitter.com/",
+    },
 
     JWT: {
       KEY: process.env.JWTKEY || 'lib',
@@ -68,6 +73,8 @@ const configs = {
       ID: process.env.GOOGLEAUTHID,
       SECRET: process.env.GOOGLEAUTHSECRET,
       CALLBACKURL: process.env.GOOGLEAUTHCALLBACKURL,
+      USER: process.env.GOOGLEMAILSUER,
+      PASS: process.env.GOOGLEMAILPASS,
     },
 
     FB: {

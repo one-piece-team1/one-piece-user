@@ -2,6 +2,7 @@ import {
   ConflictException,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   Repository,
@@ -12,7 +13,7 @@ import {
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
-import { UserCreditDto } from './dto/index';
+import { UserCreditDto, UserForgetDto } from './dto/index';
 import * as IUser from './interfaces';
 
 @EntityRepository(User)
@@ -116,5 +117,12 @@ export class UserRepository extends Repository<User> {
       this.logger.log(error.message, 'GetUsers');
       throw new InternalServerErrorException(error.message);
     }
+  }
+
+  public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
+    const { email } = userForgetDto;
+    const user = await this.findOne({ where: { email } });
+    if (!user) throw new UnauthorizedException();
+    return user;
   }
 }

@@ -25,3 +25,9 @@ export class UserCreditDto {
   })
   password: string;
 }
+
+export class UserForgetDto {
+  @IsOptional()
+  @IsEmail()
+  email: string;
+}

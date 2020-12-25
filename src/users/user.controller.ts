@@ -9,8 +9,9 @@ import {
   HttpStatus,
   Query,
   ParseIntPipe,
+  Put,
 } from '@nestjs/common';
-import { UserCreditDto } from './dto';
+import { UserCreditDto, UserForgetDto } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import * as IUser from './interfaces';
@@ -73,5 +74,10 @@ export class UserController {
     @Body(ValidationPipe) userCreditDto: UserCreditDto,
   ): Promise<IUser.SignInResponse> {
     return this.userService.signIn(userCreditDto);
+  }
+
+  @Post('/forget/generate')
+  createUserForget(@Body(ValidationPipe) userForgetDto: UserForgetDto) {
+    return this.userService.createUserForget(userForgetDto);
   }
 }
