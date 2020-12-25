@@ -3,6 +3,7 @@ import {
   HttpStatus,
   Injectable,
   Logger,
+  NotAcceptableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
@@ -10,7 +11,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { UserCreditDto, UserForgetDto } from './dto';
+import {
+  SigninCreditDto,
+  UserCreditDto,
+  UserForgetDto,
+  VerifyKeyDto,
+  VerifyUpdatePasswordDto,
+} from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
 import * as IUser from './interfaces';
@@ -52,15 +59,15 @@ export class UserService {
   /**
    * @description Sign in user service action
    * @public
-   * @param {UserCreditDto} userCreditDto
+   * @param {SigninCreditDto} signinCreditDto
    * @returns {Promise<IUser.SignInResponse>}
    */
   public async signIn(
-    userCreditDto: UserCreditDto,
+    signinCreditDto: SigninCreditDto,
   ): Promise<IUser.SignInResponse> {
     try {
       const username = await this.userRepository.validateUserPassword(
-        userCreditDto,
+        signinCreditDto,
       );
       if (username === null) {
         throw new UnauthorizedException('Invalid credentials');
@@ -186,7 +193,15 @@ export class UserService {
     };
   }
 
-  public async createUserForget(userForgetDto: UserForgetDto) {
+  /**
+   * @description Create user forget password first steps
+   * @public
+   * @param {UserForgetDto} userForgetDto
+   * @returns
+   */
+  public async createUserForget(
+    userForgetDto: UserForgetDto,
+  ): Promise<IUser.ResponseBase> {
     try {
       const user: User = await this.userRepository.createUserForget(
         userForgetDto,
@@ -199,12 +214,7 @@ export class UserService {
         },
       });
       const verify_key = nanoid(6);
-      this.redisClient.set(
-        `Password_valdation_${user.id}`,
-        verify_key,
-        'EX',
-        300,
-      );
+      this.redisClient.set(verify_key, `${user.id}`, 'EX', 300);
       const mail_result = await transporter.sendMail({
         to: user.email,
         from: 'noreply@onepiece.com',
@@ -270,6 +280,50 @@ export class UserService {
         status: 'success',
         message: 'Send mail success',
       };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Validate Verify Key
+   * @public
+   * @param {VerifyKeyDto} verifyKeyDto
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async validateVerifyKey(
+    verifyKeyDto: VerifyKeyDto,
+  ): Promise<IUser.ResponseBase> {
+    const key_result = await this.redisClient.get(verifyKeyDto.key);
+    if (!key_result) throw new NotAcceptableException();
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Verify success',
+    };
+  }
+
+  /**
+   * @description Verify user update password
+   * @public
+   * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async verifyUpdatePassword(
+    verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      const id = await this.redisClient.get(verifyUpdatePasswordDto.key);
+      return await this.userRepository.verifyUpdatePassword(
+        verifyUpdatePasswordDto,
+        id,
+      );
     } catch (error) {
       throw new HttpException(
         {

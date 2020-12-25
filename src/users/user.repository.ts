@@ -13,7 +13,12 @@ import {
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
-import { UserCreditDto, UserForgetDto } from './dto/index';
+import {
+  SigninCreditDto,
+  UserCreditDto,
+  UserForgetDto,
+  VerifyUpdatePasswordDto,
+} from './dto/index';
 import * as IUser from './interfaces';
 
 @EntityRepository(User)
@@ -54,14 +59,14 @@ export class UserRepository extends Repository<User> {
   /**
    * @description Validate user password
    * @public
-   * @param {UserCreditDto} userCreditDto
+   * @param {SigninCreditDto} signinCreditDto
    * @returns {Promise<string>}
    */
   public async validateUserPassword(
-    userCreditDto: UserCreditDto,
+    signinCreditDto: SigninCreditDto,
   ): Promise<string> {
-    const { username, password } = userCreditDto;
-    const user = await this.findOne({ where: { username } });
+    const { email, password } = signinCreditDto;
+    const user = await this.findOne({ where: { email } });
     if (user && (await user.validatePassword(password))) {
       return user.username;
     } else {
@@ -119,10 +124,44 @@ export class UserRepository extends Repository<User> {
     }
   }
 
+  /**
+   * @description Create user forget email process
+   * @public
+   * @param {UserForgetDto} userForgetDto
+   */
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
     const { email } = userForgetDto;
     const user = await this.findOne({ where: { email } });
     if (!user) throw new UnauthorizedException();
     return user;
+  }
+
+  /**
+   * @description Verify Update Password
+   * @public
+   * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async verifyUpdatePassword(
+    verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      const user = await this.findOne({ where: { id } });
+      user.salt = await bcrypt.genSalt();
+      user.password = await this.hashPassword(
+        verifyUpdatePasswordDto.password,
+        user.salt,
+      );
+      await user.save();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'update password success',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
   }
 }

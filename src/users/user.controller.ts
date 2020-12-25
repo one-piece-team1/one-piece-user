@@ -7,11 +7,14 @@ import {
   Request,
   UseGuards,
   HttpStatus,
-  Query,
-  ParseIntPipe,
-  Put,
 } from '@nestjs/common';
-import { UserCreditDto, UserForgetDto } from './dto';
+import {
+  SigninCreditDto,
+  UserCreditDto,
+  UserForgetDto,
+  VerifyKeyDto,
+  VerifyUpdatePasswordDto,
+} from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import * as IUser from './interfaces';
@@ -71,13 +74,29 @@ export class UserController {
 
   @Post('/signin')
   signIn(
-    @Body(ValidationPipe) userCreditDto: UserCreditDto,
+    @Body(ValidationPipe) signinCreditDto: SigninCreditDto,
   ): Promise<IUser.SignInResponse> {
-    return this.userService.signIn(userCreditDto);
+    return this.userService.signIn(signinCreditDto);
   }
 
-  @Post('/forget/generate')
-  createUserForget(@Body(ValidationPipe) userForgetDto: UserForgetDto) {
+  @Post('/forgets/generates')
+  createUserForget(
+    @Body(ValidationPipe) userForgetDto: UserForgetDto,
+  ): Promise<IUser.ResponseBase> {
     return this.userService.createUserForget(userForgetDto);
+  }
+
+  @Post('/forgets/verifies')
+  validateVerifyKey(
+    @Body(ValidationPipe) verifyKeyDto: VerifyKeyDto,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.validateVerifyKey(verifyKeyDto);
+  }
+
+  @Post('/forgets/confirms')
+  verifyUpdatePassword(
+    @Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
   }
 }
