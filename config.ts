@@ -59,6 +59,23 @@ const configs = {
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
 
+    JWT: {
+      KEY: process.env.JWTKEY || 'lib',
+      SECRET: process.env.JWTSECRET || 'lib',
+    },
+
+    GOOGLE: {
+      ID: process.env.GOOGLEAUTHID,
+      SECRET: process.env.GOOGLEAUTHSECRET,
+      CALLBACKURL: process.env.GOOGLEAUTHCALLBACKURL,
+    },
+
+    FB: {
+      ID: process.env.FBAUTHID,
+      SECRET: process.env.FBAUTHSECRET,
+      CALLBACKURL: process.env.FBAUTHCALLBACKURL,
+    },
+
     EVENT_STORE_SETTINGS: {
       protocol: process.env.EVENTSTOREPROTOCOL || 'http',
       hostname: process.env.EVENTSTOREHOSTNAME || '0.0.0.0',
@@ -96,7 +113,7 @@ const configs = {
     PORT: process.env.APPPORT || 7071,
   },
   test: {
-    PORT: 7072,
+    PORT: 7071,
   },
 };
 
