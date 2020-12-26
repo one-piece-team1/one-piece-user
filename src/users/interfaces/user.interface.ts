@@ -1,3 +1,4 @@
+export type TMailType = 'forget' | 'facebook' | 'google';
 export interface UserInfo {
   id?: string;
   role?: string;

@@ -45,7 +45,6 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
         username: `${name.familyName}${name.givenName}`,
         accessToken: jwtAccessToken,
       };
-      this.logger.log(user, 'Validate');
       done(null, user, {});
     } catch (error) {
       this.logger.log(error.message, 'Validate-Err');
