@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   InternalServerErrorException,
   Logger,
   NotAcceptableException,
@@ -20,6 +22,7 @@ import {
   UserCreditDto,
   UserForgetDto,
   UserThirdDto,
+  UserUpdatePassDto,
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
@@ -193,6 +196,65 @@ export class UserRepository extends Repository<User> {
     } catch (error) {
       throw new InternalServerErrorException();
     }
+  }
+
+  /**
+   * @description User update password
+   * @public
+   * @param {UserUpdatePassDto} userUpdatePassword
+   * @param {string} id
+   * @param {Promise<IUser.ResponseBase>}
+   */
+  public async userUpdatePassword(
+    userUpdatePassword: UserUpdatePassDto,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    console.log('userUpdatePassword: ', userUpdatePassword, id);
+    const { newPassword, oldPassword } = userUpdatePassword;
+    const user = await this.findOne({ where: { id, status: true } });
+    // if no user throw not acceptable
+    if (!user)
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Invalid Password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    // if password is wrong throw not acceptable
+    if (!(await user.validatePassword(oldPassword)))
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Invalid Password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    // if password is same as previous password throw not acceptable
+    if (await user.validatePassword(oldPassword))
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Cannot use previous password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    user.salt = await bcrypt.genSalt();
+    user.password = await this.hashPassword(newPassword, user.salt);
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('Update password conflict');
+      } else {
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Update password success',
+    };
   }
 
   /**

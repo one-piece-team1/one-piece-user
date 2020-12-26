@@ -17,6 +17,7 @@ import {
   UserForgetDto,
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
+  UserUpdatePassDto,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
@@ -46,6 +47,7 @@ export class UserService {
     try {
       return await this.userRepository.signUp(userCreditDto);
     } catch (error) {
+      this.logger.log(error.message, 'SignUp');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -87,6 +89,7 @@ export class UserService {
         };
       }
     } catch (error) {
+      this.logger.log(error.message, 'SignIn');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -150,6 +153,7 @@ export class UserService {
         count,
       };
     } catch (error) {
+      this.logger.log(error.message, 'GetUsers');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -270,6 +274,7 @@ export class UserService {
         message: 'Send mail success',
       };
     } catch (error) {
+      this.logger.log(error.message, 'CreateUserForget');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -437,6 +442,7 @@ export class UserService {
         });
       }
     } catch (error) {
+      this.logger.log(error.message, 'MailHandler');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -481,6 +487,7 @@ export class UserService {
         id,
       );
     } catch (error) {
+      this.logger.log(error.message, 'VerifyUpdatePassword');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -489,6 +496,13 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  public async userUpdatePassword(
+    userUpdatePassword: UserUpdatePassDto,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    return this.userRepository.userUpdatePassword(userUpdatePassword, id);
   }
 
   /**
@@ -516,6 +530,7 @@ export class UserService {
         message: 'Logout success',
       };
     } catch (error) {
+      this.logger.log(error.message, 'LogOut');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
