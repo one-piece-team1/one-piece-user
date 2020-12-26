@@ -500,4 +500,29 @@ export class UserService {
   public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
     return await this.userRepository.softDeleteUser(id);
   }
+
+  /**
+   * @description Log out an user
+   * @public
+   * @param {string} token
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async logOut(token: string): Promise<IUser.ResponseBase> {
+    try {
+      await this.redisClient.lpush('blacklist', token);
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'Logout success',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

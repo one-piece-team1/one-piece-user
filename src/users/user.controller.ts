@@ -44,6 +44,12 @@ export class UserController {
     return this.userService.getUsers(searchDto);
   }
 
+  @Get('/logout')
+  @UseGuards(AuthGuard(['jwt']))
+  logOut(@Request() req: Express.Request): Promise<IUser.ResponseBase> {
+    return this.userService.logOut(req.headers.authorization);
+  }
+
   @Get('/google')
   @UseGuards(AuthGuard('google'))
   googleAuth(): number {
