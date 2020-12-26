@@ -66,7 +66,7 @@ export class UserRepository extends Repository<User> {
     signinCreditDto: SigninCreditDto,
   ): Promise<string> {
     const { email, password } = signinCreditDto;
-    const user = await this.findOne({ where: { email } });
+    const user = await this.findOne({ where: { email, status: true } });
     if (user && (await user.validatePassword(password))) {
       return user.username;
     } else {
@@ -105,6 +105,7 @@ export class UserRepository extends Repository<User> {
 
     if (searchDto.keyword.length > 0) {
       searchOpts.where = {
+        status: true,
         username: Like('%' + searchDto.keyword + '%'),
         order: { username: 'DESC' },
       };
@@ -131,7 +132,7 @@ export class UserRepository extends Repository<User> {
    */
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
     const { email } = userForgetDto;
-    const user = await this.findOne({ where: { email } });
+    const user = await this.findOne({ where: { email, status: true } });
     if (!user) throw new UnauthorizedException();
     return user;
   }
@@ -148,7 +149,7 @@ export class UserRepository extends Repository<User> {
     id: string,
   ): Promise<IUser.ResponseBase> {
     try {
-      const user = await this.findOne({ where: { id } });
+      const user = await this.findOne({ where: { id, status: true } });
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(
         verifyUpdatePasswordDto.password,

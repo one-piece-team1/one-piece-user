@@ -35,6 +35,9 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   salt: string;
 
+  @Column({ type: 'boolean', default: true })
+  status: boolean;
+
   @CreateDateColumn({ nullable: false })
   createdAt: Date;
 
