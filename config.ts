@@ -58,6 +58,30 @@ const configs = {
     // Server Setting
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
+    
+    COMPANY_LINK: {
+      FB: "http://www.facebook.com/",
+      TWITTER: "http://www.twitter.com/",
+    },
+
+    JWT: {
+      KEY: process.env.JWTKEY || 'lib',
+      SECRET: process.env.JWTSECRET || 'lib',
+    },
+
+    GOOGLE: {
+      ID: process.env.GOOGLEAUTHID,
+      SECRET: process.env.GOOGLEAUTHSECRET,
+      CALLBACKURL: process.env.GOOGLEAUTHCALLBACKURL,
+      USER: process.env.GOOGLEMAILSUER,
+      PASS: process.env.GOOGLEMAILPASS,
+    },
+
+    FB: {
+      ID: process.env.FBAUTHID,
+      SECRET: process.env.FBAUTHSECRET,
+      CALLBACKURL: process.env.FBAUTHCALLBACKURL,
+    },
 
     EVENT_STORE_SETTINGS: {
       protocol: process.env.EVENTSTOREPROTOCOL || 'http',
@@ -96,7 +120,7 @@ const configs = {
     PORT: process.env.APPPORT || 7071,
   },
   test: {
-    PORT: 7072,
+    PORT: 7071,
   },
 };
 
