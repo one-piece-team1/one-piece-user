@@ -65,11 +65,11 @@ export class UserRepository extends Repository<User> {
    */
   public async validateUserPassword(
     signinCreditDto: SigninCreditDto,
-  ): Promise<string> {
+  ): Promise<User> {
     const { email, password } = signinCreditDto;
     const user = await this.findOne({ where: { email, status: true } });
     if (user && (await user.validatePassword(password))) {
-      return user.username;
+      return user;
     } else {
       return null;
     }

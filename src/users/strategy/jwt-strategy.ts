@@ -43,6 +43,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         email,
       };
     }
+
     const user = await this.userRepository.findOne({
       where: { username, status: true },
     });

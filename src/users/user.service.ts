@@ -66,13 +66,17 @@ export class UserService {
     signinCreditDto: SigninCreditDto,
   ): Promise<IUser.SignInResponse> {
     try {
-      const username = await this.userRepository.validateUserPassword(
+      const user = await this.userRepository.validateUserPassword(
         signinCreditDto,
       );
-      if (username === null) {
+      if (!user) {
         throw new UnauthorizedException('Invalid credentials');
       } else {
-        const payload: JwtPayload = { username, licence: 'onepiece' };
+        const payload: JwtPayload = {
+          id: user.id,
+          username: user.username,
+          licence: 'onepiece',
+        };
         const accessToken = await this.jwtService.sign(payload);
 
         return {
@@ -108,6 +112,7 @@ export class UserService {
       status: 'success',
       message: {
         user: {
+          id: user.id,
           role: user.role,
           username: user.username,
           licence: user.licence || 'onepiece',
