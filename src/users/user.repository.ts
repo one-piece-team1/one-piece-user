@@ -13,11 +13,13 @@ import {
   Like,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { nanoid } from 'nanoid';
 import { User } from './user.entity';
 import {
   SigninCreditDto,
   UserCreditDto,
   UserForgetDto,
+  UserThirdDto,
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
@@ -55,6 +57,32 @@ export class UserRepository extends Repository<User> {
       }
     }
     return { statusCode: 201, status: 'success', message: 'signup success' };
+  }
+
+  public async thirdPartySignUp(
+    userThirdDto: UserThirdDto,
+  ): Promise<IUser.ResponseBase> {
+    const { username, email } = userThirdDto;
+    const user = new User();
+    const tempPass = nanoid(10);
+    user.username = username;
+    user.email = email;
+    user.salt = await bcrypt.genSalt();
+    user.password = await this.hashPassword(tempPass, user.salt);
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        return {
+          statusCode: 409,
+          status: 'error',
+          message: 'User already existed',
+        };
+      } else {
+        return { statusCode: 500, status: 'error', message: error.message };
+      }
+    }
+    return { statusCode: 201, status: 'success', message: tempPass };
   }
 
   /**

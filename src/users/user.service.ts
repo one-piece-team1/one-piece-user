@@ -164,12 +164,32 @@ export class UserService {
    * @description Get user information from google login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {IUser.ResponseBase}
+   * @returns {Promise<IUser.ResponseBase>}
    */
-  public googleLogin(user: IUser.UserInfo): IUser.ResponseBase {
+  public async googleLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+    // if google login redirect not success throw Exception
     if (!user) {
       throw new UnauthorizedException('No user existed');
     }
+    // if login success check for third party login repo process
+    // check if user existed or not
+    // if existed then not create new user
+    // if not existed create new user
+    const signUpResult = await this.userRepository.thirdPartySignUp({
+      username: user.username,
+      email: user.email,
+    });
+
+    if (signUpResult.status !== 'success') {
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user,
+        },
+      };
+    }
+    user.id = signUpResult.message;
     return {
       statusCode: 200,
       status: 'success',
@@ -183,12 +203,31 @@ export class UserService {
    * @description Get user information from facebook login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {IUser.ResponseBase}
+   * @returns {Promise<IUser.ResponseBase>}
    */
-  public fbLogin(user: IUser.UserInfo): IUser.ResponseBase {
+  public async fbLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
     if (!user) {
       throw new UnauthorizedException('No user existed');
     }
+    // if login success check for third party login repo process
+    // check if user existed or not
+    // if existed then not create new user
+    // if not existed create new user
+    const signUpResult = await this.userRepository.thirdPartySignUp({
+      username: user.username,
+      email: user.email,
+    });
+
+    if (signUpResult.status !== 'success') {
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user,
+        },
+      };
+    }
+    user.id = signUpResult.message;
     return {
       statusCode: 200,
       status: 'success',

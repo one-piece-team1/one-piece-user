@@ -26,6 +26,17 @@ export class UserCreditDto {
   password: string;
 }
 
+export class UserThirdDto {
+  @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  username: string;
+
+  @IsOptional()
+  @IsEmail()
+  email: string;
+}
+
 export class SigninCreditDto {
   @IsOptional()
   @IsEmail()

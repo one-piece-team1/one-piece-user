@@ -4,6 +4,7 @@ export interface UserInfo {
   username?: string;
   email?: string;
   licence?: string;
+  [futureKey: string]: any;
 }
 
 export interface IPage {
