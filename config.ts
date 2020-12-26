@@ -108,7 +108,7 @@ const configs = {
       userTable: process.env.DBUSERTABLE || 'user',
     },
 
-    REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+    REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6382",
 
     GEO_CONFIGS: {
       key: process.env.GEOKEY,
