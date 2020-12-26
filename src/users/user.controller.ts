@@ -7,6 +7,10 @@ import {
   Request,
   UseGuards,
   HttpStatus,
+  Delete,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   SigninCreditDto,
@@ -98,5 +102,13 @@ export class UserController {
     @Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
   ): Promise<IUser.ResponseBase> {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
+  }
+
+  @Delete('/:id')
+  @UseGuards(AuthGuard(['jwt']))
+  softDeleteUser(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.softDeleteUser(id);
   }
 }

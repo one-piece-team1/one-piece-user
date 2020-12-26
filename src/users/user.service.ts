@@ -334,4 +334,14 @@ export class UserService {
       );
     }
   }
+
+  /**
+   * @description Soft del user
+   * @public
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
+    return await this.userRepository.softDeleteUser(id);
+  }
 }

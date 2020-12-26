@@ -2,6 +2,7 @@ import {
   ConflictException,
   InternalServerErrorException,
   Logger,
+  NotAcceptableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -155,6 +156,28 @@ export class UserRepository extends Repository<User> {
         verifyUpdatePasswordDto.password,
         user.salt,
       );
+      await user.save();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'update password success',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  /**
+   * @description Soft delete user
+   * @public
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
+    try {
+      const user = await this.findOne({ where: { id, status: true } });
+      if (!user) throw new NotAcceptableException();
+      user.status = false;
       await user.save();
       return {
         statusCode: 200,
