@@ -231,7 +231,7 @@ export class UserRepository extends Repository<User> {
         HttpStatus.NOT_ACCEPTABLE,
       );
     // if password is same as previous password throw not acceptable
-    if (await user.validatePassword(oldPassword))
+    if (await user.validatePassword(newPassword))
       throw new HttpException(
         {
           status: HttpStatus.NOT_ACCEPTABLE,
