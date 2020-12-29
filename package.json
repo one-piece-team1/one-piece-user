@@ -30,7 +30,7 @@
     "build:docker": "docker build -t libterty8186/one-piece-user .",
     "build:test": "docker build -t one-piece-user-build-test .",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main",
