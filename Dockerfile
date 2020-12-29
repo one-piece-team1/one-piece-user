@@ -18,4 +18,4 @@ RUN npm install
 COPY . .
 RUN npm run build
 EXPOSE 7071 443
-RUN npm run start
+CMD ["node", "dist/src/main.js" ]
