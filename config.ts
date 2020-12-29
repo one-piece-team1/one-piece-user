@@ -115,7 +115,13 @@ const configs = {
       secret: process.env.GEOSECRET
     }
   },
-  development: {},
+  development: {
+    HOST: process.env.SERVERHEROKUURL || 'localhost',
+    PORT: process.env.APPPORT || 443,
+    DB_SETTINGS: {
+      url: process.env.DBHOST
+    }
+  },
   production: {
     PORT: process.env.APPPORT || 7071,
   },
