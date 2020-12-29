@@ -16,8 +16,8 @@ if (config.ENV === 'development') {
       ssl: {
         rejectUnauthorized: false,
       },
-    }
-  }
+    },
+  };
 } else {
   ormSetting = {
     type: 'postgres',
@@ -32,7 +32,5 @@ if (config.ENV === 'development') {
     logging: false,
   };
 }
-
-console.log(config)
 
 export const ormConfig = ormSetting;

@@ -117,7 +117,7 @@ const configs = {
   },
   development: {
     HOST: process.env.SERVERHEROKUURL || 'localhost',
-    PORT: process.env.APPPORT || 443,
+    PORT: process.env.PORT || 443,
     DB_SETTINGS: {
       url: process.env.DBHOST
     }
