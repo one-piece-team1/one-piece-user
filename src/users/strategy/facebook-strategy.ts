@@ -42,11 +42,9 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       });
       const user = {
         email: emails[0].value,
-        firstName: name.givenName,
-        lastName: name.familyName,
+        username: `${name.familyName}${name.givenName}`,
         accessToken: jwtAccessToken,
       };
-      this.logger.log(user, 'Validate');
       done(null, user, {});
     } catch (error) {
       this.logger.log(error.message, 'Validate-Err');

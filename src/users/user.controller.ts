@@ -7,6 +7,11 @@ import {
   Request,
   UseGuards,
   HttpStatus,
+  Delete,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import {
   SigninCreditDto,
@@ -14,6 +19,7 @@ import {
   UserForgetDto,
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
+  UserUpdatePassDto,
 } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -40,6 +46,12 @@ export class UserController {
     return this.userService.getUsers(searchDto);
   }
 
+  @Get('/logout')
+  @UseGuards(AuthGuard(['jwt']))
+  logOut(@Request() req: Express.Request): Promise<IUser.ResponseBase> {
+    return this.userService.logOut(req.headers.authorization);
+  }
+
   @Get('/google')
   @UseGuards(AuthGuard('google'))
   googleAuth(): number {
@@ -55,13 +67,15 @@ export class UserController {
 
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Request() req: Express.Request): IUser.ResponseBase {
+  googleAuthRedirect(
+    @Request() req: Express.Request,
+  ): Promise<IUser.ResponseBase> {
     return this.userService.googleLogin(req.user);
   }
 
   @Get('/facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
-  fbAuthRedirect(@Request() req: Express.Request): IUser.ResponseBase {
+  fbAuthRedirect(@Request() req: Express.Request): Promise<IUser.ResponseBase> {
     return this.userService.fbLogin(req.user);
   }
 
@@ -98,5 +112,22 @@ export class UserController {
     @Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
   ): Promise<IUser.ResponseBase> {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
+  }
+
+  @Put('/:id/password')
+  @UseGuards(AuthGuard(['jwt']))
+  userUpdatePassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.userUpdatePassword(userUpdatePassDto, id);
+  }
+
+  @Delete('/:id')
+  @UseGuards(AuthGuard(['jwt']))
+  softDeleteUser(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.softDeleteUser(id);
   }
 }

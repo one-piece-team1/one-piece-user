@@ -1,7 +1,10 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   InternalServerErrorException,
   Logger,
+  NotAcceptableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -12,11 +15,14 @@ import {
   Like,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { nanoid } from 'nanoid';
 import { User } from './user.entity';
 import {
   SigninCreditDto,
   UserCreditDto,
   UserForgetDto,
+  UserThirdDto,
+  UserUpdatePassDto,
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
@@ -56,6 +62,32 @@ export class UserRepository extends Repository<User> {
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
+  public async thirdPartySignUp(
+    userThirdDto: UserThirdDto,
+  ): Promise<IUser.ResponseBase> {
+    const { username, email } = userThirdDto;
+    const user = new User();
+    const tempPass = nanoid(10);
+    user.username = username;
+    user.email = email;
+    user.salt = await bcrypt.genSalt();
+    user.password = await this.hashPassword(tempPass, user.salt);
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        return {
+          statusCode: 409,
+          status: 'error',
+          message: 'User already existed',
+        };
+      } else {
+        return { statusCode: 500, status: 'error', message: error.message };
+      }
+    }
+    return { statusCode: 201, status: 'success', message: tempPass };
+  }
+
   /**
    * @description Validate user password
    * @public
@@ -64,11 +96,11 @@ export class UserRepository extends Repository<User> {
    */
   public async validateUserPassword(
     signinCreditDto: SigninCreditDto,
-  ): Promise<string> {
+  ): Promise<User> {
     const { email, password } = signinCreditDto;
-    const user = await this.findOne({ where: { email } });
+    const user = await this.findOne({ where: { email, status: true } });
     if (user && (await user.validatePassword(password))) {
-      return user.username;
+      return user;
     } else {
       return null;
     }
@@ -105,6 +137,7 @@ export class UserRepository extends Repository<User> {
 
     if (searchDto.keyword.length > 0) {
       searchOpts.where = {
+        status: true,
         username: Like('%' + searchDto.keyword + '%'),
         order: { username: 'DESC' },
       };
@@ -131,7 +164,7 @@ export class UserRepository extends Repository<User> {
    */
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
     const { email } = userForgetDto;
-    const user = await this.findOne({ where: { email } });
+    const user = await this.findOne({ where: { email, status: true } });
     if (!user) throw new UnauthorizedException();
     return user;
   }
@@ -148,12 +181,93 @@ export class UserRepository extends Repository<User> {
     id: string,
   ): Promise<IUser.ResponseBase> {
     try {
-      const user = await this.findOne({ where: { id } });
+      const user = await this.findOne({ where: { id, status: true } });
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(
         verifyUpdatePasswordDto.password,
         user.salt,
       );
+      await user.save();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'update password success',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  /**
+   * @description User update password
+   * @public
+   * @param {UserUpdatePassDto} userUpdatePassword
+   * @param {string} id
+   * @param {Promise<IUser.ResponseBase>}
+   */
+  public async userUpdatePassword(
+    userUpdatePassword: UserUpdatePassDto,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    console.log('userUpdatePassword: ', userUpdatePassword, id);
+    const { newPassword, oldPassword } = userUpdatePassword;
+    const user = await this.findOne({ where: { id, status: true } });
+    // if no user throw not acceptable
+    if (!user)
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Invalid Password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    // if password is wrong throw not acceptable
+    if (!(await user.validatePassword(oldPassword)))
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Invalid Password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    // if password is same as previous password throw not acceptable
+    if (await user.validatePassword(newPassword))
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Cannot use previous password',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    user.salt = await bcrypt.genSalt();
+    user.password = await this.hashPassword(newPassword, user.salt);
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('Update password conflict');
+      } else {
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Update password success',
+    };
+  }
+
+  /**
+   * @description Soft delete user
+   * @public
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
+    try {
+      const user = await this.findOne({ where: { id, status: true } });
+      if (!user) throw new NotAcceptableException();
+      user.status = false;
       await user.save();
       return {
         statusCode: 200,

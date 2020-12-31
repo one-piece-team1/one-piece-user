@@ -17,6 +17,7 @@ import {
   UserForgetDto,
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
+  UserUpdatePassDto,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
@@ -46,6 +47,7 @@ export class UserService {
     try {
       return await this.userRepository.signUp(userCreditDto);
     } catch (error) {
+      this.logger.log(error.message, 'SignUp');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -66,13 +68,17 @@ export class UserService {
     signinCreditDto: SigninCreditDto,
   ): Promise<IUser.SignInResponse> {
     try {
-      const username = await this.userRepository.validateUserPassword(
+      const user = await this.userRepository.validateUserPassword(
         signinCreditDto,
       );
-      if (username === null) {
+      if (!user) {
         throw new UnauthorizedException('Invalid credentials');
       } else {
-        const payload: JwtPayload = { username, licence: 'onepiece' };
+        const payload: JwtPayload = {
+          id: user.id,
+          username: user.username,
+          licence: 'onepiece',
+        };
         const accessToken = await this.jwtService.sign(payload);
 
         return {
@@ -83,6 +89,7 @@ export class UserService {
         };
       }
     } catch (error) {
+      this.logger.log(error.message, 'SignIn');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -108,6 +115,7 @@ export class UserService {
       status: 'success',
       message: {
         user: {
+          id: user.id,
           role: user.role,
           username: user.username,
           licence: user.licence || 'onepiece',
@@ -145,6 +153,7 @@ export class UserService {
         count,
       };
     } catch (error) {
+      this.logger.log(error.message, 'GetUsers');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -159,12 +168,38 @@ export class UserService {
    * @description Get user information from google login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {IUser.ResponseBase}
+   * @returns {Promise<IUser.ResponseBase>}
    */
-  public googleLogin(user: IUser.UserInfo): IUser.ResponseBase {
+  public async googleLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+    // if google login redirect not success throw Exception
     if (!user) {
       throw new UnauthorizedException('No user existed');
     }
+    // if login success check for third party login repo process
+    // check if user existed or not
+    // if existed then not create new user
+    // if not existed create new user
+    const signUpResult = await this.userRepository.thirdPartySignUp({
+      username: user.username,
+      email: user.email,
+    });
+
+    if (signUpResult.status !== 'success') {
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user,
+        },
+      };
+    }
+    const mail_result = await this.mailSender(
+      user,
+      'google',
+      signUpResult.message,
+    );
+    if (!mail_result) throw new UnauthorizedException();
+    user.id = signUpResult.message;
     return {
       statusCode: 200,
       status: 'success',
@@ -178,12 +213,37 @@ export class UserService {
    * @description Get user information from facebook login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {IUser.ResponseBase}
+   * @returns {Promise<IUser.ResponseBase>}
    */
-  public fbLogin(user: IUser.UserInfo): IUser.ResponseBase {
+  public async fbLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
     if (!user) {
       throw new UnauthorizedException('No user existed');
     }
+    // if login success check for third party login repo process
+    // check if user existed or not
+    // if existed then not create new user
+    // if not existed create new user
+    const signUpResult = await this.userRepository.thirdPartySignUp({
+      username: user.username,
+      email: user.email,
+    });
+
+    if (signUpResult.status !== 'success') {
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user,
+        },
+      };
+    }
+    const mail_result = await this.mailSender(
+      user,
+      'facebook',
+      signUpResult.message,
+    );
+    if (!mail_result) throw new UnauthorizedException();
+    user.id = signUpResult.message;
     return {
       statusCode: 200,
       status: 'success',
@@ -206,6 +266,47 @@ export class UserService {
       const user: User = await this.userRepository.createUserForget(
         userForgetDto,
       );
+      const mail_result = await this.mailSender(user, 'forget');
+      if (!mail_result) throw new UnauthorizedException();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'Send mail success',
+      };
+    } catch (error) {
+      this.logger.log(error.message, 'CreateUserForget');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Mail Handler
+   * @private
+   * @param {User | IUser.UserInfo} user
+   * @param {IUser.TMailType} type
+   * @returns {Promise<unknown>}
+   */
+  private async mailSender(
+    user: User | IUser.UserInfo,
+    type: IUser.TMailType,
+  ): Promise<unknown>;
+  private async mailSender(
+    user: User | IUser.UserInfo,
+    type: IUser.TMailType,
+    tempPass: string,
+  ): Promise<unknown>;
+  private async mailSender(
+    user: User | IUser.UserInfo,
+    type: IUser.TMailType,
+    tempPass?: string,
+  ): Promise<unknown> {
+    try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -213,14 +314,16 @@ export class UserService {
           pass: config.GOOGLE.PASS,
         },
       });
-      const verify_key = nanoid(6);
-      this.redisClient.set(verify_key, `${user.id}`, 'EX', 300);
-      const mail_result = await transporter.sendMail({
-        to: user.email,
-        from: 'noreply@onepiece.com',
-        subject: 'Email Verify',
-        text: 'Please verify the email',
-        html: `
+
+      if (type === 'forget') {
+        const verify_key = nanoid(6);
+        this.redisClient.set(verify_key, `${user.id}`, 'EX', 300);
+        return await transporter.sendMail({
+          to: user.email,
+          from: 'noreply@onepiece.com',
+          subject: 'Email Verify',
+          text: 'Please verify the email',
+          html: `
           <tr>
             <td class="innerpadding borderbottom" style="padding: 30px 30px 30px 30px; border-bottom: 1px solid #f2eeed;">
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -273,14 +376,73 @@ export class UserService {
             </td>
           </tr>
         `,
-      });
-      if (!mail_result) throw new UnauthorizedException();
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Send mail success',
-      };
+        });
+      }
+
+      if (typeof tempPass === 'string') {
+        return await transporter.sendMail({
+          to: user.email,
+          from: 'noreply@onepiece.com',
+          subject: 'Welcome to OnePiece society',
+          html: `
+          <tr>
+            <td class="innerpadding borderbottom" style="padding: 30px 30px 30px 30px; border-bottom: 1px solid #f2eeed;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td class="h2" style="padding: 0 0 15px 0; font-size: 24px; line-height: 28px; font-weight: bold;">
+                    Hello ${user.username}!
+                  </td>
+                </tr>
+                <tr>
+                  <td class="bodycopy" style="font-size: 16px; line-height: 22px;">
+                    Welcome to OnePiece society. We are honor to have you in the community.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="bodycopy" style="font-size: 16px; line-height: 22px;">
+                    Due to you have register with ${type} authentication. We create a temporary password 
+                    <span style="background-color: #FFFF00">${tempPass}</span>
+                    for you. Please remember to update the password.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td class="footer" bgcolor="#44525f">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" class="footercopy">
+                    CopyRight &copy; 2020 OnePiece. All Right Reserved<br />
+                    <span class="hide"></span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding: 20px 0 0 0;">
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td width="37" style="text-align: center; padding: 0 10px 0 10px;">
+                          <a href="${config.COMPANY_LINK.FB}">
+                            <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/210284/facebook.png" width="37" height="37" alt="Facebook" border="0" />
+                          </a>
+                        </td>
+                        <td width="37" style="text-align: center; padding: 0 10px 0 10px;">
+                          <a href="${config.COMPANY_LINK.TWITTER}">
+                            <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/210284/twitter.png" width="37" height="37" alt="Twitter" border="0" />
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        `,
+        });
+      }
     } catch (error) {
+      this.logger.log(error.message, 'MailHandler');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -325,6 +487,50 @@ export class UserService {
         id,
       );
     } catch (error) {
+      this.logger.log(error.message, 'VerifyUpdatePassword');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async userUpdatePassword(
+    userUpdatePassword: UserUpdatePassDto,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    return this.userRepository.userUpdatePassword(userUpdatePassword, id);
+  }
+
+  /**
+   * @description Soft del user
+   * @public
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
+    return await this.userRepository.softDeleteUser(id);
+  }
+
+  /**
+   * @description Log out an user
+   * @public
+   * @param {string} token
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async logOut(token: string): Promise<IUser.ResponseBase> {
+    try {
+      await this.redisClient.lpush('blacklist', token);
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: 'Logout success',
+      };
+    } catch (error) {
+      this.logger.log(error.message, 'LogOut');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,

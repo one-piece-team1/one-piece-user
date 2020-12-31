@@ -1,9 +1,11 @@
+export type TMailType = 'forget' | 'facebook' | 'google';
 export interface UserInfo {
   id?: string;
   role?: string;
   username?: string;
   email?: string;
   licence?: string;
+  [futureKey: string]: any;
 }
 
 export interface IPage {
