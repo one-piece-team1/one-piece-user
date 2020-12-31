@@ -22,7 +22,13 @@ export class User extends BaseEntity {
   /**
    * @todo decide how to setup user role and which default yet
    */
-  @Column({ type: 'enum', enum: EUser.EUserRole, default: EUser.EUserRole.USER, nullable: false, insert: false })
+  @Column({
+    type: 'enum',
+    enum: EUser.EUserRole,
+    default: EUser.EUserRole.USER,
+    nullable: false,
+    insert: false,
+  })
   role: EUser.EUserRole;
 
   @Column({ type: 'varchar', nullable: false })
