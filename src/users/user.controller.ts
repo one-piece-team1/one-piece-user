@@ -43,7 +43,8 @@ export class UserController {
     @Request() req: Express.Request,
   ): Promise<{ users: User[]; count: number } | Error> {
     const searchDto: IUser.ISearch = req.query;
-    return this.userService.getUsers(searchDto);
+    const isAdmin: boolean = req.user['role'] === 'admin';
+    return this.userService.getUsers(searchDto, isAdmin);
   }
 
   @Get('/logout')

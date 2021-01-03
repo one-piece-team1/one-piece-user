@@ -28,6 +28,7 @@ import {
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
+import * as EUser from './enums';
 import * as utils from '../libs/utils';
 
 @EntityRepository(User)
@@ -126,10 +127,12 @@ export class UserRepository extends Repository<User> {
    * @description Get users with pagination
    * @public
    * @param {IUser.ISearch} searchDto
+   * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; }>}
    */
   public async getUsers(
     searchDto: IUser.ISearch,
+    isAdmin: boolean,
   ): Promise<{ users: User[]; count: number }> {
     const take = searchDto.take ? Number(searchDto.take) : 10;
     const skip = searchDto.skip ? Number(searchDto.skip) : 0;
@@ -146,15 +149,25 @@ export class UserRepository extends Repository<User> {
         'createdAt',
         'updatedAt',
       ],
+      order: {
+        updatedAt: searchDto.sort,
+      },
+      where: {
+        status: true,
+      },
     };
 
-    if (searchDto.keyword.length > 0) {
-      searchOpts.where = {
-        status: true,
-        username: Like('%' + searchDto.keyword + '%'),
-        order: { username: 'DESC' },
-      };
+    // only admin can view admin data
+    // trial, user, vip can view each others data except admin data
+    if (!isAdmin) {
+      searchOpts.where.role = Not(EUser.EUserRole.ADMIN);
     }
+
+    // keyword searching currently only support username search
+    if (searchDto.keyword.length > 0) {
+      searchOpts.where.username = Like('%' + searchDto.keyword + '%');
+    }
+
     try {
       const [users, count] = await this.repoManager.findAndCount(
         User,

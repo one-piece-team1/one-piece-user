@@ -130,15 +130,21 @@ export class UserService {
    * @description Get users by information
    * @public
    * @param {IUser.ISearch} searchDto
+   * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; } | Error>}
    */
   public async getUsers(
     searchDto: IUser.ISearch,
+    isAdmin: boolean,
   ): Promise<{ users: User[]; count: number } | Error> {
     try {
       if (!searchDto.keyword) searchDto.keyword = '';
+      if (!searchDto.sort) searchDto.sort = 'DESC';
 
-      const { users, count } = await this.userRepository.getUsers(searchDto);
+      const { users, count } = await this.userRepository.getUsers(
+        searchDto,
+        isAdmin,
+      );
 
       if (!users || !count)
         return new HttpException(
