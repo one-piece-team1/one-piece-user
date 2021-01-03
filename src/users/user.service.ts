@@ -530,18 +530,50 @@ export class UserService {
   public async userUpdatePassword(
     userUpdatePassword: UserUpdatePassDto,
     id: string,
+    tokenId: string,
   ): Promise<IUser.ResponseBase> {
-    return this.userRepository.userUpdatePassword(userUpdatePassword, id);
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      return await this.userRepository.userUpdatePassword(
+        userUpdatePassword,
+        id,
+      );
+    } catch (error) {
+      this.logger.log(error.message, 'UserUpdatePassword');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
    * @description Soft del user
    * @public
    * @param {string} id
+   * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
-    return await this.userRepository.softDeleteUser(id);
+  public async softDeleteUser(
+    id: string,
+    tokenId: string,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      return await this.userRepository.softDeleteUser(id);
+    } catch (error) {
+      this.logger.log(error.message, 'SoftDeleteUser');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**

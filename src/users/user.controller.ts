@@ -137,17 +137,19 @@ export class UserController {
   @Put('/:id/password')
   @UseGuards(AuthGuard(['jwt']))
   userUpdatePassword(
+    @CurrentUser() user: IUser.UserInfo,
     @Param('id', ParseUUIDPipe) id: string,
     @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto,
   ): Promise<IUser.ResponseBase> {
-    return this.userService.userUpdatePassword(userUpdatePassDto, id);
+    return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
   }
 
   @Delete('/:id')
   @UseGuards(AuthGuard(['jwt']))
   softDeleteUser(
+    @CurrentUser() user: IUser.UserInfo,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<IUser.ResponseBase> {
-    return this.userService.softDeleteUser(id);
+    return this.userService.softDeleteUser(id, user.id);
   }
 }
