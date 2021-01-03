@@ -9,7 +9,6 @@ import {
   HttpStatus,
   Delete,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Put,
   SetMetadata,
@@ -73,7 +72,7 @@ export class UserController {
 
   @Get('/facebook')
   @UseGuards(AuthGuard('facebook'))
-  fbAuth(@Request() req: Express.Request): number {
+  fbAuth(): number {
     return HttpStatus.OK;
   }
 

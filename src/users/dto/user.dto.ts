@@ -5,7 +5,6 @@ import {
   Matches,
   IsEmail,
   IsOptional,
-  IsUUID,
 } from 'class-validator';
 
 export class UserCreditDto {

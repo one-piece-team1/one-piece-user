@@ -32,7 +32,7 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     profile: Profile,
     done: (err: any, user?: any, info?: any) => void,
   ): Promise<void> {
-    const { id, name, emails } = profile;
+    const { name, emails } = profile;
     try {
       const jwtAccessToken = await this.jwtService.sign({
         username: `${name.familyName}${name.givenName}`,
