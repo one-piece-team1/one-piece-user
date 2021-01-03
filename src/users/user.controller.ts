@@ -67,8 +67,12 @@ export class UserController {
 
   @Get('/:id/info')
   @UseGuards(AuthGuard(['jwt']))
-  getUserById(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
-    return this.userService.getUserById(id);
+  getUserById(
+    @Request() req: Express.Request,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<User> {
+    const isAdmin: boolean = req.user['role'] === 'admin';
+    return this.userService.getUserById(id, isAdmin);
   }
 
   @Get('/google/redirect')

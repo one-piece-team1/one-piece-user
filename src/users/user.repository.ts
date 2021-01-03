@@ -14,6 +14,7 @@ import {
   getManager,
   EntityManager,
   Like,
+  Not,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -173,16 +174,28 @@ export class UserRepository extends Repository<User> {
    * @description Get User By Id
    * @public
    * @param {string} id
+   * @param {boolean} isAdmin
    * @returns {Promise<User>}
    */
-  public async getUserById(id: string): Promise<User> {
+  public async getUserById(id: string, isAdmin: boolean): Promise<User> {
     try {
-      const user: User = await this.findOne({ where: { id, status: true } });
+      const findOpts: IUser.IFindOne = {
+        where: {
+          id,
+          status: true,
+        },
+      };
+      // only admin can view admin data
+      // trial, user, vip can view each others data except admin data
+      if (!isAdmin) findOpts.where.role = Not('admin');
+
+      const user: User = await this.findOne(findOpts);
       if (!user) throw new NotFoundException();
       delete user.password;
       delete user.salt;
       return user;
     } catch (error) {
+      this.logger.log(error.message, 'GetUserById');
       throw new InternalServerErrorException(error.message);
     }
   }

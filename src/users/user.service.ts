@@ -169,11 +169,12 @@ export class UserService {
    * @description Get User by id
    * @public
    * @param {string} id
+   * @param {boolean} isAdmin
    * @returns {Promise<User>}
    */
-  public async getUserById(id: string): Promise<User> {
+  public async getUserById(id: string, isAdmin: boolean): Promise<User> {
     try {
-      return await this.userRepository.getUserById(id);
+      return await this.userRepository.getUserById(id, isAdmin);
     } catch (error) {
       this.logger.log(error.message, 'GetUserById');
       throw new HttpException(

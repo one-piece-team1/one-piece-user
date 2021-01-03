@@ -1,3 +1,5 @@
+import * as EUser from '../enums';
+
 export type TMailType = 'forget' | 'facebook' | 'google';
 export interface UserInfo {
   id?: string;
@@ -20,5 +22,13 @@ export interface ISearch extends IPage {
 
 export interface IQueryPaging extends IPage {
   select?: any[];
+  [futureKey: string]: any;
+}
+
+export interface IFindOne {
+  id?: string;
+  email?: string;
+  status?: boolean;
+  role?: EUser.EUserRole;
   [futureKey: string]: any;
 }
