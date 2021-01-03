@@ -26,15 +26,22 @@ import { AuthGuard } from '@nestjs/passport';
 import * as IUser from './interfaces';
 import * as Express from 'express';
 import { User } from './user.entity';
+import { CurrentUser } from './get-user.decorator';
 
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
+  @Get('/test')
+  @UseGuards(AuthGuard('jwt'))
+  adminTest(@CurrentUser() user: IUser.UserInfo) {
+    return 'hello';
+  }
+
   @Get('/info')
   @UseGuards(AuthGuard(['jwt']))
-  getUser(@Request() req: Express.Request): IUser.ResponseBase {
-    return this.userService.getUser(req.user);
+  getUser(@CurrentUser() user: IUser.UserInfo): IUser.ResponseBase {
+    return this.userService.getUser(user);
   }
 
   @Get('/paging')
@@ -69,25 +76,27 @@ export class UserController {
   @Get('/:id/info')
   @UseGuards(AuthGuard(['jwt']))
   getUserById(
-    @Request() req: Express.Request,
+    @CurrentUser() user: IUser.UserInfo,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<User> {
-    const isAdmin: boolean = req.user['role'] === 'admin';
+    const isAdmin: boolean = user['role'] === 'admin';
     return this.userService.getUserById(id, isAdmin);
   }
 
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(
-    @Request() req: Express.Request,
+    @CurrentUser() user: IUser.UserInfo,
   ): Promise<IUser.ResponseBase> {
-    return this.userService.googleLogin(req.user);
+    return this.userService.googleLogin(user);
   }
 
   @Get('/facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
-  fbAuthRedirect(@Request() req: Express.Request): Promise<IUser.ResponseBase> {
-    return this.userService.fbLogin(req.user);
+  fbAuthRedirect(
+    @CurrentUser() user: IUser.UserInfo,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.fbLogin(user);
   }
 
   @Post('/signup')

@@ -269,7 +269,6 @@ export class UserRepository extends Repository<User> {
     userUpdatePassword: UserUpdatePassDto,
     id: string,
   ): Promise<IUser.ResponseBase> {
-    console.log('userUpdatePassword: ', userUpdatePassword, id);
     const { newPassword, oldPassword } = userUpdatePassword;
     const user = await this.findOne({ where: { id, status: true } });
     // if no user throw not acceptable

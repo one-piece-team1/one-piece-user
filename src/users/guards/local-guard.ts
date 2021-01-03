@@ -1,12 +1,11 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { ExecutionContext, Injectable, CanActivate } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()
-export class UserGuard extends AuthGuard(['jwt', 'google']) {
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const result = (await super.canActivate(context)) as boolean;
-    const request = context.switchToHttp().getRequest();
-    await super.logIn(request);
-    return result;
+export class RoleGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext) {
+    return true;
   }
 }
