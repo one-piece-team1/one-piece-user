@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   ParseUUIDPipe,
   Put,
+  SetMetadata,
 } from '@nestjs/common';
 import {
   SigninCreditDto,
@@ -23,18 +24,21 @@ import {
 } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
-import * as IUser from './interfaces';
 import * as Express from 'express';
 import { User } from './user.entity';
 import { CurrentUser } from './get-user.decorator';
+import { RoleGuard } from './guards/local-guard';
+import * as IUser from './interfaces';
+import * as EUser from './enums';
 
 @Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
   @Get('/test')
-  @UseGuards(AuthGuard('jwt'))
-  adminTest(@CurrentUser() user: IUser.UserInfo) {
+  @SetMetadata('roles', [EUser.EUserRole.USER])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  adminTest() {
     return 'hello';
   }
 
@@ -50,7 +54,7 @@ export class UserController {
     @Request() req: Express.Request,
   ): Promise<{ users: User[]; count: number } | Error> {
     const searchDto: IUser.ISearch = req.query;
-    const isAdmin: boolean = req.user['role'] === 'admin';
+    const isAdmin: boolean = req.user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUsers(searchDto, isAdmin);
   }
 
@@ -79,7 +83,7 @@ export class UserController {
     @CurrentUser() user: IUser.UserInfo,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<User> {
-    const isAdmin: boolean = user['role'] === 'admin';
+    const isAdmin: boolean = user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUserById(id, isAdmin);
   }
 
