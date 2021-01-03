@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotAcceptableException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -169,15 +170,37 @@ export class UserRepository extends Repository<User> {
   }
 
   /**
+   * @description Get User By Id
+   * @public
+   * @param {string} id
+   * @returns {Promise<User>}
+   */
+  public async getUserById(id: string): Promise<User> {
+    try {
+      const user: User = await this.findOne({ where: { id, status: true } });
+      if (!user) throw new NotFoundException();
+      delete user.password;
+      delete user.salt;
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  /**
    * @description Create user forget email process
    * @public
    * @param {UserForgetDto} userForgetDto
    */
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
-    const { email } = userForgetDto;
-    const user = await this.findOne({ where: { email, status: true } });
-    if (!user) throw new UnauthorizedException();
-    return user;
+    try {
+      const { email } = userForgetDto;
+      const user = await this.findOne({ where: { email, status: true } });
+      if (!user) throw new UnauthorizedException();
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   /**

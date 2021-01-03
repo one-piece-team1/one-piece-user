@@ -65,6 +65,12 @@ export class UserController {
     return HttpStatus.OK;
   }
 
+  @Get('/:id/info')
+  @UseGuards(AuthGuard(['jwt']))
+  getUserById(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
+    return this.userService.getUserById(id);
+  }
+
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(

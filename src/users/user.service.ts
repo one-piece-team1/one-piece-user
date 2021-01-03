@@ -166,6 +166,27 @@ export class UserService {
   }
 
   /**
+   * @description Get User by id
+   * @public
+   * @param {string} id
+   * @returns {Promise<User>}
+   */
+  public async getUserById(id: string): Promise<User> {
+    try {
+      return await this.userRepository.getUserById(id);
+    } catch (error) {
+      this.logger.log(error.message, 'GetUserById');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
    * @description Get user information from google login callback redirect
    * @public
    * @param {IUser.UserInfo} user
