@@ -18,6 +18,7 @@ import {
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
   UserUpdatePassDto,
+  UpdateSubscription,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
@@ -548,6 +549,35 @@ export class UserService {
       );
     } catch (error) {
       this.logger.log(error.message, 'UserUpdatePassword');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Update subscribe plan
+   * @public
+   * @param {UpdateSubscription} updateSubPlan
+   * @param {string} id
+   * @param {string} tokenId
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateSubscribePlan(
+    updateSubPlan: UpdateSubscription,
+    id: string,
+    tokenId: string,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      // if (updateSubPlan.role === EUser.EUserRole.ADMIN || updateSubPlan.role === EUser.EUserRole.TRIAL)
+      return await this.userRepository.updateSubscribePlan(updateSubPlan, id);
+    } catch (error) {
+      this.logger.log(error.message, 'UpdateSubscribePlan');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,

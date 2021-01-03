@@ -20,6 +20,7 @@ import {
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
   UserUpdatePassDto,
+  UpdateSubscription,
 } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -145,6 +146,16 @@ export class UserController {
     @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto,
   ): Promise<IUser.ResponseBase> {
     return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
+  }
+
+  @Put('/:id/subscribes')
+  @UseGuards(AuthGuard(['jwt']))
+  updateSubscribePlan(
+    @CurrentUser() user: IUser.UserInfo,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(ValidationPipe) updateSubPlan: UpdateSubscription,
+  ): Promise<IUser.ResponseBase> {
+    return this.userService.updateSubscribePlan(updateSubPlan, id, user.id);
   }
 
   @Delete('/:id')

@@ -21,6 +21,7 @@ import { nanoid } from 'nanoid';
 import { User } from './user.entity';
 import {
   SigninCreditDto,
+  UpdateSubscription,
   UserCreditDto,
   UserForgetDto,
   UserThirdDto,
@@ -313,6 +314,51 @@ export class UserRepository extends Repository<User> {
       statusCode: 200,
       status: 'success',
       message: 'Update password success',
+    };
+  }
+
+  /**
+   * @description Update user subscribe plan and changing user role
+   * @public
+   * @param {UpdateSubscription} updateSubPlan
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateSubscribePlan(
+    updateSubPlan: UpdateSubscription,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    const user = await this.findOne({ where: { id, status: true } });
+
+    if (!user)
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+
+    user.role = updateSubPlan.role;
+    user.expiredDate = utils.addMonths(
+      new Date(Date.now()),
+      updateSubPlan.subRange,
+    );
+
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('Update subscribe conflict');
+      } else {
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Update subscribe success',
     };
   }
 
