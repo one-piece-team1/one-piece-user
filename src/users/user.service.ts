@@ -527,6 +527,14 @@ export class UserService {
     }
   }
 
+  /**
+   * @description Update user password
+   * @public
+   * @param {UserUpdatePassDto} userUpdatePassword
+   * @param {string} id
+   * @param {string} tokenId
+   * @returns {Promise<IUser.ResponseBase>}
+   */
   public async userUpdatePassword(
     userUpdatePassword: UserUpdatePassDto,
     id: string,
