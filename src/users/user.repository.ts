@@ -26,6 +26,7 @@ import {
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
+import * as utils from '../libs/utils';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -47,6 +48,7 @@ export class UserRepository extends Repository<User> {
     user.email = email;
     user.salt = await bcrypt.genSalt();
     user.password = await this.hashPassword(password, user.salt);
+    user.expiredDate = utils.addMonths(new Date(Date.now()), 1);
     try {
       await user.save();
     } catch (error) {
@@ -72,6 +74,7 @@ export class UserRepository extends Repository<User> {
     user.email = email;
     user.salt = await bcrypt.genSalt();
     user.password = await this.hashPassword(tempPass, user.salt);
+    user.expiredDate = utils.addMonths(new Date(Date.now()), 1);
     try {
       await user.save();
     } catch (error) {
@@ -132,7 +135,15 @@ export class UserRepository extends Repository<User> {
     const searchOpts: IUser.IQueryPaging = {
       take,
       skip,
-      select: ['id', 'role', 'username', 'email', 'createdAt', 'updatedAt'],
+      select: [
+        'id',
+        'role',
+        'username',
+        'email',
+        'expiredDate',
+        'createdAt',
+        'updatedAt',
+      ],
     };
 
     if (searchDto.keyword.length > 0) {

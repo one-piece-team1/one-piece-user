@@ -31,6 +31,9 @@ export class User extends BaseEntity {
   })
   role: EUser.EUserRole;
 
+  @Column({ type: 'timestamp', nullable: false })
+  expiredDate: Date;
+
   @Column({ type: 'varchar', nullable: false })
   @Index({ unique: true })
   username: string;
@@ -39,10 +42,10 @@ export class User extends BaseEntity {
   @Index({ unique: true })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({ type: 'varchar', nullable: false })
   salt: string;
 
   // represent if user is soft deleted or not, true means not deleted
@@ -64,13 +67,10 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   desc?: string;
 
-  @Column({ type: 'timestamp', nullable: false })
-  expiredDate: number;
-
-  @CreateDateColumn({ nullable: false })
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
 
-  @UpdateDateColumn({ nullable: false })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
 
   async validatePassword(password: string): Promise<boolean> {

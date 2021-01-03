@@ -120,6 +120,7 @@ export class UserService {
           username: user.username,
           licence: user.licence || 'onepiece',
           email: user.email,
+          expiredDate: user.expiredDate,
         },
       },
     };

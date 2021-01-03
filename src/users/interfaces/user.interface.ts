@@ -5,6 +5,7 @@ export interface UserInfo {
   username?: string;
   email?: string;
   licence?: string;
+  expiredDate?: string;
   [futureKey: string]: any;
 }
 
