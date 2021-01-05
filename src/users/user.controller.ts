@@ -82,7 +82,7 @@ export class UserController {
   getUserById(
     @CurrentUser() user: IUser.UserInfo,
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<User> {
+  ): Promise<IUser.ResponseBase> {
     const isAdmin: boolean = user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUserById(id, isAdmin);
   }

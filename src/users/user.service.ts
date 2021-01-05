@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotAcceptableException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
@@ -179,9 +180,17 @@ export class UserService {
    * @param {boolean} isAdmin
    * @returns {Promise<User>}
    */
-  public async getUserById(id: string, isAdmin: boolean): Promise<User> {
+  public async getUserById(id: string, isAdmin: boolean): Promise<IUser.ResponseBase> {
     try {
-      return await this.userRepository.getUserById(id, isAdmin);
+      const user = await this.userRepository.getUserById(id, isAdmin);
+      if (!user) throw new NotFoundException();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user
+        }
+      }
     } catch (error) {
       this.logger.log(error.message, 'GetUserById');
       throw new HttpException(
