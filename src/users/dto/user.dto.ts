@@ -5,8 +5,12 @@ import {
   Matches,
   IsEmail,
   IsOptional,
-  IsUUID,
+  IsInt,
+  Min,
+  Max,
+  IsIn,
 } from 'class-validator';
+import * as EUser from '../enums';
 
 export class UserCreditDto {
   @IsString()
@@ -80,9 +84,6 @@ export class UserUpdatePassDto {
   @IsString()
   @MinLength(8)
   @MaxLength(20)
-  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'password too weak',
-  })
   oldPassword: string;
 
   @IsString()
@@ -92,4 +93,14 @@ export class UserUpdatePassDto {
     message: 'password too weak',
   })
   newPassword: string;
+}
+export class UpdateSubscription {
+  // user cannot update back to trial or user cannot update to admin
+  @IsIn([EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2])
+  role: EUser.EUserRole;
+
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  subRange: number;
 }

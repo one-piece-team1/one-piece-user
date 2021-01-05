@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotAcceptableException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRepository } from './user.repository';
@@ -18,6 +19,7 @@ import {
   VerifyKeyDto,
   VerifyUpdatePasswordDto,
   UserUpdatePassDto,
+  UpdateSubscription,
 } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
@@ -120,6 +122,7 @@ export class UserService {
           username: user.username,
           licence: user.licence || 'onepiece',
           email: user.email,
+          expiredDate: user.expiredDate,
         },
       },
     };
@@ -129,15 +132,21 @@ export class UserService {
    * @description Get users by information
    * @public
    * @param {IUser.ISearch} searchDto
+   * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; } | Error>}
    */
   public async getUsers(
     searchDto: IUser.ISearch,
+    isAdmin: boolean,
   ): Promise<{ users: User[]; count: number } | Error> {
     try {
       if (!searchDto.keyword) searchDto.keyword = '';
+      if (!searchDto.sort) searchDto.sort = 'DESC';
 
-      const { users, count } = await this.userRepository.getUsers(searchDto);
+      const { users, count } = await this.userRepository.getUsers(
+        searchDto,
+        isAdmin,
+      );
 
       if (!users || !count)
         return new HttpException(
@@ -154,6 +163,39 @@ export class UserService {
       };
     } catch (error) {
       this.logger.log(error.message, 'GetUsers');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Get User by id
+   * @public
+   * @param {string} id
+   * @param {boolean} isAdmin
+   * @returns {Promise<User>}
+   */
+  public async getUserById(
+    id: string,
+    isAdmin: boolean,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      const user = await this.userRepository.getUserById(id, isAdmin);
+      if (!user) throw new NotFoundException();
+      return {
+        statusCode: 200,
+        status: 'success',
+        message: {
+          user,
+        },
+      };
+    } catch (error) {
+      this.logger.log(error.message, 'GetUserById');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -498,21 +540,90 @@ export class UserService {
     }
   }
 
+  /**
+   * @description Update user password
+   * @public
+   * @param {UserUpdatePassDto} userUpdatePassword
+   * @param {string} id
+   * @param {string} tokenId
+   * @returns {Promise<IUser.ResponseBase>}
+   */
   public async userUpdatePassword(
     userUpdatePassword: UserUpdatePassDto,
     id: string,
+    tokenId: string,
   ): Promise<IUser.ResponseBase> {
-    return this.userRepository.userUpdatePassword(userUpdatePassword, id);
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      return await this.userRepository.userUpdatePassword(
+        userUpdatePassword,
+        id,
+      );
+    } catch (error) {
+      this.logger.log(error.message, 'UserUpdatePassword');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Update subscribe plan
+   * @public
+   * @param {UpdateSubscription} updateSubPlan
+   * @param {string} id
+   * @param {string} tokenId
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateSubscribePlan(
+    updateSubPlan: UpdateSubscription,
+    id: string,
+    tokenId: string,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      // if (updateSubPlan.role === EUser.EUserRole.ADMIN || updateSubPlan.role === EUser.EUserRole.TRIAL)
+      return await this.userRepository.updateSubscribePlan(updateSubPlan, id);
+    } catch (error) {
+      this.logger.log(error.message, 'UpdateSubscribePlan');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**
    * @description Soft del user
    * @public
    * @param {string} id
+   * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
-    return await this.userRepository.softDeleteUser(id);
+  public async softDeleteUser(
+    id: string,
+    tokenId: string,
+  ): Promise<IUser.ResponseBase> {
+    try {
+      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+      return await this.userRepository.softDeleteUser(id);
+    } catch (error) {
+      this.logger.log(error.message, 'SoftDeleteUser');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   /**

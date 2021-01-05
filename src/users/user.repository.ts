@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotAcceptableException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -13,12 +14,14 @@ import {
   getManager,
   EntityManager,
   Like,
+  Not,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
 import {
   SigninCreditDto,
+  UpdateSubscription,
   UserCreditDto,
   UserForgetDto,
   UserThirdDto,
@@ -26,6 +29,8 @@ import {
   VerifyUpdatePasswordDto,
 } from './dto/index';
 import * as IUser from './interfaces';
+import * as EUser from './enums';
+import * as utils from '../libs/utils';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -47,6 +52,7 @@ export class UserRepository extends Repository<User> {
     user.email = email;
     user.salt = await bcrypt.genSalt();
     user.password = await this.hashPassword(password, user.salt);
+    user.expiredDate = utils.addMonths(new Date(Date.now()), 1);
     try {
       await user.save();
     } catch (error) {
@@ -72,6 +78,7 @@ export class UserRepository extends Repository<User> {
     user.email = email;
     user.salt = await bcrypt.genSalt();
     user.password = await this.hashPassword(tempPass, user.salt);
+    user.expiredDate = utils.addMonths(new Date(Date.now()), 1);
     try {
       await user.save();
     } catch (error) {
@@ -121,10 +128,12 @@ export class UserRepository extends Repository<User> {
    * @description Get users with pagination
    * @public
    * @param {IUser.ISearch} searchDto
+   * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; }>}
    */
   public async getUsers(
     searchDto: IUser.ISearch,
+    isAdmin: boolean,
   ): Promise<{ users: User[]; count: number }> {
     const take = searchDto.take ? Number(searchDto.take) : 10;
     const skip = searchDto.skip ? Number(searchDto.skip) : 0;
@@ -132,16 +141,34 @@ export class UserRepository extends Repository<User> {
     const searchOpts: IUser.IQueryPaging = {
       take,
       skip,
-      select: ['id', 'role', 'username', 'email', 'createdAt', 'updatedAt'],
+      select: [
+        'id',
+        'role',
+        'username',
+        'email',
+        'expiredDate',
+        'createdAt',
+        'updatedAt',
+      ],
+      order: {
+        updatedAt: searchDto.sort,
+      },
+      where: {
+        status: true,
+      },
     };
 
-    if (searchDto.keyword.length > 0) {
-      searchOpts.where = {
-        status: true,
-        username: Like('%' + searchDto.keyword + '%'),
-        order: { username: 'DESC' },
-      };
+    // only admin can view admin data
+    // trial, user, vip can view each others data except admin data
+    if (!isAdmin) {
+      searchOpts.where.role = Not(EUser.EUserRole.ADMIN);
     }
+
+    // keyword searching currently only support username search
+    if (searchDto.keyword.length > 0) {
+      searchOpts.where.username = Like('%' + searchDto.keyword + '%');
+    }
+
     try {
       const [users, count] = await this.repoManager.findAndCount(
         User,
@@ -158,15 +185,49 @@ export class UserRepository extends Repository<User> {
   }
 
   /**
+   * @description Get User By Id
+   * @public
+   * @param {string} id
+   * @param {boolean} isAdmin
+   * @returns {Promise<User>}
+   */
+  public async getUserById(id: string, isAdmin: boolean): Promise<User> {
+    try {
+      const findOpts: IUser.IFindOne = {
+        where: {
+          id,
+          status: true,
+        },
+      };
+      // only admin can view admin data
+      // trial, user, vip can view each others data except admin data
+      if (!isAdmin) findOpts.where.role = Not('admin');
+
+      const user: User = await this.findOne(findOpts);
+      if (!user) throw new NotFoundException();
+      delete user.password;
+      delete user.salt;
+      return user;
+    } catch (error) {
+      this.logger.log(error.message, 'GetUserById');
+      throw new InternalServerErrorException(error.message);
+    }
+  }
+
+  /**
    * @description Create user forget email process
    * @public
    * @param {UserForgetDto} userForgetDto
    */
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
-    const { email } = userForgetDto;
-    const user = await this.findOne({ where: { email, status: true } });
-    if (!user) throw new UnauthorizedException();
-    return user;
+    try {
+      const { email } = userForgetDto;
+      const user = await this.findOne({ where: { email, status: true } });
+      if (!user) throw new UnauthorizedException();
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
+    }
   }
 
   /**
@@ -209,7 +270,6 @@ export class UserRepository extends Repository<User> {
     userUpdatePassword: UserUpdatePassDto,
     id: string,
   ): Promise<IUser.ResponseBase> {
-    console.log('userUpdatePassword: ', userUpdatePassword, id);
     const { newPassword, oldPassword } = userUpdatePassword;
     const user = await this.findOne({ where: { id, status: true } });
     // if no user throw not acceptable
@@ -254,6 +314,51 @@ export class UserRepository extends Repository<User> {
       statusCode: 200,
       status: 'success',
       message: 'Update password success',
+    };
+  }
+
+  /**
+   * @description Update user subscribe plan and changing user role
+   * @public
+   * @param {UpdateSubscription} updateSubPlan
+   * @param {string} id
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateSubscribePlan(
+    updateSubPlan: UpdateSubscription,
+    id: string,
+  ): Promise<IUser.ResponseBase> {
+    const user = await this.findOne({ where: { id, status: true } });
+
+    if (!user)
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+
+    user.role = updateSubPlan.role;
+    user.expiredDate = utils.addMonths(
+      new Date(Date.now()),
+      updateSubPlan.subRange,
+    );
+
+    try {
+      await user.save();
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('Update subscribe conflict');
+      } else {
+        throw new InternalServerErrorException(error.message);
+      }
+    }
+
+    return {
+      statusCode: 200,
+      status: 'success',
+      message: 'Update subscribe success',
     };
   }
 
