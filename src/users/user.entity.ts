@@ -20,7 +20,7 @@ export class User extends BaseEntity {
   id: string;
 
   /**
-   * @todo decide how to setup user role and which default yet
+   * @description User Role is default to 'user' and the others just for backup for future
    */
   @Column({
     type: 'enum',
@@ -31,9 +31,26 @@ export class User extends BaseEntity {
   })
   role: EUser.EUserRole;
 
+  /**
+   * @description Currently no use
+   */
   @Column({ type: 'timestamp', nullable: false })
   expiredDate: Date;
 
+  /**
+   * @description User Credits area includes diamondCoin & goldCoin
+   * @detail diamondCoin is used for deposit
+   * @detail goldCoin is used for daily reward or other event reward
+   */
+  @Column({ type: 'int', nullable: false, default: 0, insert: false })
+  diamondCoin: number;
+
+  @Column({ type: 'int', nullable: false, default: 10, insert: false })
+  goldCoin: number;
+
+  /**
+   * @description Basic Info area
+   */
   @Column({ type: 'varchar', nullable: false })
   @Index({ unique: true })
   username: string;
@@ -48,16 +65,24 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', nullable: false })
   salt: string;
 
-  // represent if user is soft deleted or not, true means not deleted
+  /**
+   * @description Represent if user is soft deleted or not, true means not deleted
+   */
   @Column({ type: 'boolean', default: true })
   status: boolean;
 
+  /**
+   * @description Following Area
+   */
   @Column({ type: 'int', nullable: false, default: 0 })
   followerCount: number;
 
   @Column({ type: 'int', nullable: false, default: 0 })
   followingCount: number;
 
+  /**
+   * @description User Info area
+   */
   @Column({ type: 'enum', enum: EUser.EUserGender, nullable: true })
   gender?: EUser.EUserGender;
 
@@ -67,6 +92,9 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', nullable: true })
   desc?: string;
 
+  /**
+   * @description Time area
+   */
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
 
