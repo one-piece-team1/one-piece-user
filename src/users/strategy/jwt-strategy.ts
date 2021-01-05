@@ -64,9 +64,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     // if user has expired their credit throw error
-    if (Date.now() >= new Date(user.expiredDate).getTime()) {
-      throw new NotAcceptableException('User credit has expired');
-    }
+    // currently no use
+    // if (Date.now() >= new Date(user.expiredDate).getTime()) {
+    //   throw new NotAcceptableException('User credit has expired');
+    // }
 
     return user;
   }

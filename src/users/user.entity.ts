@@ -25,7 +25,7 @@ export class User extends BaseEntity {
   @Column({
     type: 'enum',
     enum: EUser.EUserRole,
-    default: EUser.EUserRole.TRIAL,
+    default: EUser.EUserRole.USER,
     nullable: false,
     insert: false,
   })
