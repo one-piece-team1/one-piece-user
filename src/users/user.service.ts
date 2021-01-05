@@ -180,7 +180,10 @@ export class UserService {
    * @param {boolean} isAdmin
    * @returns {Promise<User>}
    */
-  public async getUserById(id: string, isAdmin: boolean): Promise<IUser.ResponseBase> {
+  public async getUserById(
+    id: string,
+    isAdmin: boolean,
+  ): Promise<IUser.ResponseBase> {
     try {
       const user = await this.userRepository.getUserById(id, isAdmin);
       if (!user) throw new NotFoundException();
@@ -188,9 +191,9 @@ export class UserService {
         statusCode: 200,
         status: 'success',
         message: {
-          user
-        }
-      }
+          user,
+        },
+      };
     } catch (error) {
       this.logger.log(error.message, 'GetUserById');
       throw new HttpException(
