@@ -38,7 +38,7 @@ export class AMQPHandler {
   subscribeData(queueName: string, exchangeName?: string): Promise<unknown> {
     return new Promise((resolve, reject) => {
       amqp.connect(
-        'amqp://localhost:5672' + '/?heartbeat=60',
+        `${config.EVENT_STORE_SETTINGS.protocol}://${config.EVENT_STORE_SETTINGS.hostname}:${config.EVENT_STORE_SETTINGS.tcpPort}/?heartbeat=60`,
         (connectErr: Error, connection: amqp.Connection) => {
           if (connectErr) return reject(connectErr.message);
 
