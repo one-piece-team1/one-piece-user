@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { config } from '../config';
+import { AMQPHandlerFactory } from './rabbitmq';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule);
@@ -20,7 +21,15 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   });
 
-  await app.listen(config.PORT);
+  await app.listen(config.PORT, () => {
+    // for listening service trip event
+    AMQPHandlerFactory.createSub('onepiece_user_trip_queue', 'service-trip');
+    // for listening service article event
+    AMQPHandlerFactory.createSub(
+      'onepiece_user_article_queue',
+      'service-article',
+    );
+  });
   Logger.log(
     `Server start on ${config.HOST}:${config.PORT}`,
     'Bootstrap',
