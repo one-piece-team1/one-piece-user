@@ -84,9 +84,9 @@ const configs = {
     },
 
     EVENT_STORE_SETTINGS: {
-      protocol: process.env.EVENTSTOREPROTOCOL || 'http',
-      hostname: process.env.EVENTSTOREHOSTNAME || '0.0.0.0',
-      tcpPort: process.env.EVENTSTORETCPPORT || 1113,
+      protocol: process.env.EVENTSTOREPROTOCOL || 'amqp',
+      hostname: process.env.EVENTSTOREHOSTNAME || 'localhost',
+      tcpPort: process.env.EVENTSTORETCPPORT || 5672,
       httpPort: process.env.EVENTSTOREHTTPPORT || 2113,
       credentials: {
         username: process.env.EVENTSTORECREDENTIALSUSERNAME || 'lib-test',
