@@ -3,7 +3,7 @@ import { Logger } from '@nestjs/common';
 import { config } from '../../config';
 
 export class AMQPHandler {
-  private defaultExchangeName: string = 'service-trip';
+  private defaultExchangeName = 'service-trip';
   private logger = new Logger('AMQPHandler');
 
   publishData(message: any, exchangeName?: string): Promise<unknown> {
