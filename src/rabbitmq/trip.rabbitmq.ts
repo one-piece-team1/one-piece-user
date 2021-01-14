@@ -3,9 +3,18 @@ import { Logger } from '@nestjs/common';
 import { config } from '../../config';
 
 export class AMQPHandler {
-  private defaultExchangeName = 'service-trip';
+  private defaultExchangeName = 'onepiece-trip';
   private logger = new Logger('AMQPHandler');
 
+  /**
+   * @description Pub Data
+   * @public
+   * @param {any} message
+   * @param {string | undefined} exchangeName
+   * @returns {Promise<unknown>}
+   */
+  publishData(message: any): Promise<unknown>;
+  publishData(message: any, exchangeName: string): Promise<unknown>;
   publishData(message: any, exchangeName?: string): Promise<unknown> {
     return new Promise((resolve, reject) => {
       amqp.connect(
@@ -35,6 +44,15 @@ export class AMQPHandler {
     });
   }
 
+  /**
+   * @description Sub Data
+   * @public
+   * @param {string} queueName
+   * @param {string | undefined} exchangeName
+   * @returns {Promise<unknown>}
+   */
+  subscribeData(queueName: string): Promise<unknown>;
+  subscribeData(queueName: string, exchangeName: string): Promise<unknown>;
   subscribeData(queueName: string, exchangeName?: string): Promise<unknown> {
     return new Promise((resolve, reject) => {
       amqp.connect(
@@ -81,10 +99,24 @@ export class AMQPHandler {
 }
 
 export class AMQPHandlerFactory {
+  /**
+   * @description Pub Data
+   * @public
+   * @param {any} message
+   * @param {string | undefined} exchangeName
+   * @returns {Promise<unknown>}
+   */
   static createPub(message: any, exchangeName?: string) {
     return new AMQPHandler().publishData(message, exchangeName);
   }
 
+  /**
+   * @description Sub Data
+   * @public
+   * @param {string} queueName
+   * @param {string | undefined} exchangeName
+   * @returns {Promise<unknown>}
+   */
   static createSub(queueName: string, exchangeName?: string) {
     return new AMQPHandler().subscribeData(queueName, exchangeName);
   }

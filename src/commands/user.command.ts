@@ -1,3 +1,6 @@
+/**
+ * @classdesc User create command
+ */
 export class UserCreditCommand {
   constructor(
     public readonly username: string,
