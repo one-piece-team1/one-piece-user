@@ -24,7 +24,7 @@ export class AMQPHandler {
               channel.publish(
                 this.defaultExchangeName,
                 '',
-                Buffer.from(message),
+                Buffer.from(JSON.stringify(message)),
               );
               this.logger.log(message, 'AMQPHandler-PublishData');
               resolve(true);
@@ -58,12 +58,7 @@ export class AMQPHandler {
                 (assertErr: Error, q: amqp.Replies.AssertQueue) => {
                   if (assertErr) return reject(assertErr.message);
 
-                  this.logger.log(
-                    q.queue,
-                    '[*] Waiting for messages in %s. To exit press CTRL+C',
-                  );
                   channel.bindQueue(q.queue, this.defaultExchangeName, '');
-
                   channel.consume(
                     q.queue,
                     (msg: amqp.Message) => {

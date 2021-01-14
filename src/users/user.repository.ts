@@ -31,6 +31,7 @@ import {
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
+import { UserHandlerFactory } from 'handlers';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -65,6 +66,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException();
       }
     }
+    UserHandlerFactory.createUser(userCreditDto);
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
