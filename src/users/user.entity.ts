@@ -9,9 +9,12 @@ import {
   BeforeUpdate,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as EUser from './enums';
+import { Trip } from '../trips/trip.entity';
 
 @Entity()
 @Unique(['username', 'email'])
@@ -91,6 +94,16 @@ export class User extends BaseEntity {
 
   @Column({ type: 'varchar', nullable: true })
   desc?: string;
+
+  /**
+   * @description Relation Area
+   */
+  @OneToMany(
+    () => Trip,
+    trip => trip.user,
+  )
+  @JoinColumn()
+  trips: Trip[];
 
   /**
    * @description Time area
