@@ -3,7 +3,10 @@ import { UserCreditDto } from 'users/dto';
 import * as Event from '../events';
 
 class UserHandler {
-  private readonly onepieceUserExchange = 'onepiece-user';
+  // one server only listen to one exchange
+  // seperate different event by type for different services
+  private readonly onepieceTripExchange: string = 'onepiece-trip';
+  private readonly onepieceArticleExchange: string = 'onepiece-article';
 
   /**
    * @description Create user with microservice communication by RMQ
@@ -13,17 +16,20 @@ class UserHandler {
    */
   createUser(userCreditDto: UserCreditDto) {
     const { username, email, password } = userCreditDto;
-    AMQPHandlerFactory.createPub(
-      {
-        type: Event.UserEvent.CREATEUSER,
-        data: {
-          username,
-          email,
-          password,
+    const pubExchanges: string[] = [this.onepieceTripExchange];
+    pubExchanges.forEach((exchange: string) => {
+      AMQPHandlerFactory.createPub(
+        {
+          type: Event.UserEvent.CREATEUSER,
+          data: {
+            username,
+            email,
+            password,
+          },
         },
-      },
-      this.onepieceUserExchange,
-    );
+        exchange,
+      );
+    });
   }
 }
 
