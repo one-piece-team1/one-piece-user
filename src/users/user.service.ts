@@ -79,6 +79,7 @@ export class UserService {
         const payload: JwtPayload = {
           id: user.id,
           username: user.username,
+          role: user.role,
           licence: 'onepiece',
         };
         const accessToken = await this.jwtService.sign(payload);
