@@ -6,11 +6,13 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../users/user.entity';
+import * as ETrip from './enums';
 
 @Entity()
 export class Trip extends BaseEntity {
@@ -23,6 +25,14 @@ export class Trip extends BaseEntity {
   @Column({ type: 'timestamp', nullable: false })
   endDate: Date;
 
+  @Column({
+    type: 'enum',
+    enum: ETrip.ETripView,
+    default: ETrip.ETripView.PUBLIC,
+    nullable: false,
+  })
+  publicStatus: string;
+
   @Column({ type: 'varchar', nullable: true })
   companyName?: string;
 
@@ -30,7 +40,7 @@ export class Trip extends BaseEntity {
   shipNumber?: string;
 
   /**
-   * @description Relation Area
+   * @description Relation Area with User
    */
   @ManyToOne(
     () => User,
@@ -38,6 +48,10 @@ export class Trip extends BaseEntity {
   )
   @JoinColumn()
   user: User;
+
+  @ManyToMany(type => User, user => user.views)
+  @JoinColumn()
+  viewers: User[];
 
   /**
    * @description Time area
