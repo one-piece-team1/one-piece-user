@@ -1,19 +1,4 @@
-import {
-  Entity,
-  BaseEntity,
-  PrimaryGeneratedColumn,
-  Column,
-  Unique,
-  Index,
-  BeforeInsert,
-  BeforeUpdate,
-  CreateDateColumn,
-  UpdateDateColumn,
-  JoinColumn,
-  OneToMany,
-  ManyToMany,
-  AfterLoad,
-} from 'typeorm';
+import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, BeforeInsert, BeforeUpdate, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany, ManyToMany, AfterLoad } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as EUser from './enums';
 import { Trip } from '../trips/trip.entity';
@@ -96,27 +81,39 @@ export class User extends BaseEntity {
    */
   @OneToMany(
     () => Trip,
-    trip => trip.user,
+    (trip) => trip.user,
   )
   @JoinColumn()
   trips: Trip[];
 
-  @ManyToMany(type => Trip, trip => trip.viewers)
+  @ManyToMany(
+    (type) => Trip,
+    (trip) => trip.viewers,
+  )
   @JoinColumn()
   views: Trip[];
 
   /**
    * @description Following Area
    */
-  @ManyToMany(type => User, user => user.following)
+  @ManyToMany(
+    (type) => User,
+    (user) => user.following,
+  )
   @JoinColumn()
   followers: User[];
 
-  @ManyToMany(type => User, user => user.followers)
+  @ManyToMany(
+    (type) => User,
+    (user) => user.followers,
+  )
   @JoinColumn()
   following: User[];
 
-  @OneToMany(type => User, user => user.blockLists)
+  @OneToMany(
+    (type) => User,
+    (user) => user.blockLists,
+  )
   @JoinColumn()
   blockLists: User[];
 

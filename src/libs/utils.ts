@@ -7,13 +7,7 @@ import { Logger } from '@nestjs/common';
  * @returns {void}
  */
 export function memInfo(memName: string): void {
-  Logger.log(
-    `Function ${memName} used memory: ${Math.round(
-      (process.memoryUsage().heapUsed / 1024 / 1024) * 100,
-    ) / 100} MB`,
-    'Memory-Info',
-    true,
-  );
+  Logger.log(`Function ${memName} used memory: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`, 'Memory-Info', true);
 }
 
 /**

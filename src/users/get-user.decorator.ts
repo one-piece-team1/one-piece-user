@@ -11,9 +11,7 @@ export const CurrentUser = createParamDecorator(
    * @returns {unknown | IUser.UserInfo}
    */
   (data: unknown, ctx: ExecutionContext): unknown | IUser.UserInfo => {
-    const user: unknown | IUser.UserInfo = ctx
-      .switchToHttp()
-      .getRequest<Request>().user;
+    const user: unknown | IUser.UserInfo = ctx.switchToHttp().getRequest<Request>().user;
     delete user['password'];
     delete user['salt'];
     return user;

@@ -1,26 +1,10 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotAcceptableException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import {
-  SigninCreditDto,
-  UserCreditDto,
-  UserForgetDto,
-  VerifyKeyDto,
-  VerifyUpdatePasswordDto,
-  UserUpdatePassDto,
-  UpdateSubscription,
-} from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
 import * as IUser from './interfaces';
@@ -43,9 +27,7 @@ export class UserService {
    * @param {UserCreditDto} userCreditDto
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async signUp(
-    userCreditDto: UserCreditDto,
-  ): Promise<IUser.ResponseBase> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
     try {
       return await this.userRepository.signUp(userCreditDto);
     } catch (error) {
@@ -66,13 +48,9 @@ export class UserService {
    * @param {SigninCreditDto} signinCreditDto
    * @returns {Promise<IUser.SignInResponse>}
    */
-  public async signIn(
-    signinCreditDto: SigninCreditDto,
-  ): Promise<IUser.SignInResponse> {
+  public async signIn(signinCreditDto: SigninCreditDto): Promise<IUser.SignInResponse> {
     try {
-      const user = await this.userRepository.validateUserPassword(
-        signinCreditDto,
-      );
+      const user = await this.userRepository.validateUserPassword(signinCreditDto);
       if (!user) {
         throw new UnauthorizedException('Invalid credentials');
       } else {
@@ -136,18 +114,12 @@ export class UserService {
    * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; } | Error>}
    */
-  public async getUsers(
-    searchDto: IUser.ISearch,
-    isAdmin: boolean,
-  ): Promise<{ users: User[]; count: number } | Error> {
+  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; count: number } | Error> {
     try {
       if (!searchDto.keyword) searchDto.keyword = '';
       if (!searchDto.sort) searchDto.sort = 'DESC';
 
-      const { users, count } = await this.userRepository.getUsers(
-        searchDto,
-        isAdmin,
-      );
+      const { users, count } = await this.userRepository.getUsers(searchDto, isAdmin);
 
       if (!users || !count)
         return new HttpException(
@@ -181,10 +153,7 @@ export class UserService {
    * @param {boolean} isAdmin
    * @returns {Promise<User>}
    */
-  public async getUserById(
-    id: string,
-    isAdmin: boolean,
-  ): Promise<IUser.ResponseBase> {
+  public async getUserById(id: string, isAdmin: boolean): Promise<IUser.ResponseBase> {
     try {
       const user = await this.userRepository.getUserById(id, isAdmin);
       if (!user) throw new NotFoundException();
@@ -236,11 +205,7 @@ export class UserService {
         },
       };
     }
-    const mail_result = await this.mailSender(
-      user,
-      'google',
-      signUpResult.message,
-    );
+    const mail_result = await this.mailSender(user, 'google', signUpResult.message);
     if (!mail_result) throw new UnauthorizedException();
     user.id = signUpResult.message;
     return {
@@ -280,11 +245,7 @@ export class UserService {
         },
       };
     }
-    const mail_result = await this.mailSender(
-      user,
-      'facebook',
-      signUpResult.message,
-    );
+    const mail_result = await this.mailSender(user, 'facebook', signUpResult.message);
     if (!mail_result) throw new UnauthorizedException();
     user.id = signUpResult.message;
     return {
@@ -302,13 +263,9 @@ export class UserService {
    * @param {UserForgetDto} userForgetDto
    * @returns
    */
-  public async createUserForget(
-    userForgetDto: UserForgetDto,
-  ): Promise<IUser.ResponseBase> {
+  public async createUserForget(userForgetDto: UserForgetDto): Promise<IUser.ResponseBase> {
     try {
-      const user: User = await this.userRepository.createUserForget(
-        userForgetDto,
-      );
+      const user: User = await this.userRepository.createUserForget(userForgetDto);
       const mail_result = await this.mailSender(user, 'forget');
       if (!mail_result) throw new UnauthorizedException();
       return {
@@ -335,20 +292,9 @@ export class UserService {
    * @param {IUser.TMailType} type
    * @returns {Promise<unknown>}
    */
-  private async mailSender(
-    user: User | IUser.UserInfo,
-    type: IUser.TMailType,
-  ): Promise<unknown>;
-  private async mailSender(
-    user: User | IUser.UserInfo,
-    type: IUser.TMailType,
-    tempPass: string,
-  ): Promise<unknown>;
-  private async mailSender(
-    user: User | IUser.UserInfo,
-    type: IUser.TMailType,
-    tempPass?: string,
-  ): Promise<unknown> {
+  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType): Promise<unknown>;
+  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass: string): Promise<unknown>;
+  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass?: string): Promise<unknown> {
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -502,9 +448,7 @@ export class UserService {
    * @param {VerifyKeyDto} verifyKeyDto
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async validateVerifyKey(
-    verifyKeyDto: VerifyKeyDto,
-  ): Promise<IUser.ResponseBase> {
+  public async validateVerifyKey(verifyKeyDto: VerifyKeyDto): Promise<IUser.ResponseBase> {
     const key_result = await this.redisClient.get(verifyKeyDto.key);
     if (!key_result) throw new NotAcceptableException();
     return {
@@ -520,15 +464,10 @@ export class UserService {
    * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async verifyUpdatePassword(
-    verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
-  ): Promise<IUser.ResponseBase> {
+  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IUser.ResponseBase> {
     try {
       const id = await this.redisClient.get(verifyUpdatePasswordDto.key);
-      return await this.userRepository.verifyUpdatePassword(
-        verifyUpdatePasswordDto,
-        id,
-      );
+      return await this.userRepository.verifyUpdatePassword(verifyUpdatePasswordDto, id);
     } catch (error) {
       this.logger.log(error.message, 'VerifyUpdatePassword');
       throw new HttpException(
@@ -549,17 +488,10 @@ export class UserService {
    * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async userUpdatePassword(
-    userUpdatePassword: UserUpdatePassDto,
-    id: string,
-    tokenId: string,
-  ): Promise<IUser.ResponseBase> {
+  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
     try {
       if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
-      return await this.userRepository.userUpdatePassword(
-        userUpdatePassword,
-        id,
-      );
+      return await this.userRepository.userUpdatePassword(userUpdatePassword, id);
     } catch (error) {
       this.logger.log(error.message, 'UserUpdatePassword');
       throw new HttpException(
@@ -580,11 +512,7 @@ export class UserService {
    * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async updateSubscribePlan(
-    updateSubPlan: UpdateSubscription,
-    id: string,
-    tokenId: string,
-  ): Promise<IUser.ResponseBase> {
+  public async updateSubscribePlan(updateSubPlan: UpdateSubscription, id: string, tokenId: string): Promise<IUser.ResponseBase> {
     try {
       if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
       // if (updateSubPlan.role === EUser.EUserRole.ADMIN || updateSubPlan.role === EUser.EUserRole.TRIAL)
@@ -608,10 +536,7 @@ export class UserService {
    * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async softDeleteUser(
-    id: string,
-    tokenId: string,
-  ): Promise<IUser.ResponseBase> {
+  public async softDeleteUser(id: string, tokenId: string): Promise<IUser.ResponseBase> {
     try {
       if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
       return await this.userRepository.softDeleteUser(id);

@@ -1,10 +1,5 @@
 import { Logger } from '@nestjs/common';
-import {
-  EntityManager,
-  EntityRepository,
-  getManager,
-  Repository,
-} from 'typeorm';
+import { EntityManager, EntityRepository, getManager, Repository } from 'typeorm';
 import { Trip } from './trip.entity';
 
 @EntityRepository(Trip)

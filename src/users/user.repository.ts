@@ -1,33 +1,9 @@
-import {
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  InternalServerErrorException,
-  Logger,
-  NotAcceptableException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import {
-  Repository,
-  EntityRepository,
-  getManager,
-  EntityManager,
-  Like,
-  Not,
-} from 'typeorm';
+import { ConflictException, HttpException, HttpStatus, InternalServerErrorException, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Repository, EntityRepository, getManager, EntityManager, Like, Not } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
-import {
-  SigninCreditDto,
-  UpdateSubscription,
-  UserCreditDto,
-  UserForgetDto,
-  UserThirdDto,
-  UserUpdatePassDto,
-  VerifyUpdatePasswordDto,
-} from './dto/index';
+import { SigninCreditDto, UpdateSubscription, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
@@ -44,9 +20,7 @@ export class UserRepository extends Repository<User> {
    * @param {UserCreditDto} userCreditDto
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async signUp(
-    userCreditDto: UserCreditDto,
-  ): Promise<IUser.ResponseBase> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
     const { username, email, password } = userCreditDto;
     const user = new User();
     user.username = username;
@@ -59,9 +33,7 @@ export class UserRepository extends Repository<User> {
     } catch (error) {
       if (error.code === '23505') {
         // throw 409 error when duplicate username
-        throw new ConflictException(
-          `Username: ${username} or Email: ${email} already exists`,
-        );
+        throw new ConflictException(`Username: ${username} or Email: ${email} already exists`);
       } else {
         throw new InternalServerErrorException();
       }
@@ -70,9 +42,7 @@ export class UserRepository extends Repository<User> {
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
-  public async thirdPartySignUp(
-    userThirdDto: UserThirdDto,
-  ): Promise<IUser.ResponseBase> {
+  public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<IUser.ResponseBase> {
     const { username, email } = userThirdDto;
     const user = new User();
     const tempPass = nanoid(10);
@@ -103,9 +73,7 @@ export class UserRepository extends Repository<User> {
    * @param {SigninCreditDto} signinCreditDto
    * @returns {Promise<string>}
    */
-  public async validateUserPassword(
-    signinCreditDto: SigninCreditDto,
-  ): Promise<User> {
+  public async validateUserPassword(signinCreditDto: SigninCreditDto): Promise<User> {
     const { email, password } = signinCreditDto;
     const user = await this.findOne({ where: { email, status: true } });
     if (user && (await user.validatePassword(password))) {
@@ -133,25 +101,14 @@ export class UserRepository extends Repository<User> {
    * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; }>}
    */
-  public async getUsers(
-    searchDto: IUser.ISearch,
-    isAdmin: boolean,
-  ): Promise<{ users: User[]; count: number }> {
+  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; count: number }> {
     const take = searchDto.take ? Number(searchDto.take) : 10;
     const skip = searchDto.skip ? Number(searchDto.skip) : 0;
 
     const searchOpts: IUser.IQueryPaging = {
       take,
       skip,
-      select: [
-        'id',
-        'role',
-        'username',
-        'email',
-        'expiredDate',
-        'createdAt',
-        'updatedAt',
-      ],
+      select: ['id', 'role', 'username', 'email', 'expiredDate', 'createdAt', 'updatedAt'],
       order: {
         updatedAt: searchDto.sort,
       },
@@ -172,10 +129,7 @@ export class UserRepository extends Repository<User> {
     }
 
     try {
-      const [users, count] = await this.repoManager.findAndCount(
-        User,
-        searchOpts,
-      );
+      const [users, count] = await this.repoManager.findAndCount(User, searchOpts);
       return {
         users,
         count,
@@ -239,17 +193,11 @@ export class UserRepository extends Repository<User> {
    * @param {string} id
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async verifyUpdatePassword(
-    verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
-    id: string,
-  ): Promise<IUser.ResponseBase> {
+  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto, id: string): Promise<IUser.ResponseBase> {
     try {
       const user = await this.findOne({ where: { id, status: true } });
       user.salt = await bcrypt.genSalt();
-      user.password = await this.hashPassword(
-        verifyUpdatePasswordDto.password,
-        user.salt,
-      );
+      user.password = await this.hashPassword(verifyUpdatePasswordDto.password, user.salt);
       await user.save();
       return {
         statusCode: 200,
@@ -268,10 +216,7 @@ export class UserRepository extends Repository<User> {
    * @param {string} id
    * @param {Promise<IUser.ResponseBase>}
    */
-  public async userUpdatePassword(
-    userUpdatePassword: UserUpdatePassDto,
-    id: string,
-  ): Promise<IUser.ResponseBase> {
+  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string): Promise<IUser.ResponseBase> {
     const { newPassword, oldPassword } = userUpdatePassword;
     const user = await this.findOne({ where: { id, status: true } });
     // if no user throw not acceptable
@@ -326,10 +271,7 @@ export class UserRepository extends Repository<User> {
    * @param {string} id
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async updateSubscribePlan(
-    updateSubPlan: UpdateSubscription,
-    id: string,
-  ): Promise<IUser.ResponseBase> {
+  public async updateSubscribePlan(updateSubPlan: UpdateSubscription, id: string): Promise<IUser.ResponseBase> {
     const user = await this.findOne({ where: { id, status: true } });
 
     if (!user)
@@ -342,10 +284,7 @@ export class UserRepository extends Repository<User> {
       );
 
     user.role = updateSubPlan.role;
-    user.expiredDate = utils.addMonths(
-      new Date(Date.now()),
-      updateSubPlan.subRange,
-    );
+    user.expiredDate = utils.addMonths(new Date(Date.now()), updateSubPlan.subRange);
 
     try {
       await user.save();
