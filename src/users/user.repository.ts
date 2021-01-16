@@ -64,6 +64,7 @@ export class UserRepository extends Repository<User> {
         return { statusCode: 500, status: 'error', message: error.message };
       }
     }
+    UserHandlerFactory.createUser(user);
     return { statusCode: 201, status: 'success', message: tempPass };
   }
 
