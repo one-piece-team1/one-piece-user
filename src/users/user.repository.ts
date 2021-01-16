@@ -269,6 +269,7 @@ export class UserRepository extends Repository<User> {
 
   /**
    * @description Update user subscribe plan and changing user role
+   * @deprecated
    * @public
    * @param {UpdateSubscription} updateSubPlan
    * @param {string} id
@@ -318,10 +319,11 @@ export class UserRepository extends Repository<User> {
       if (!user) throw new NotAcceptableException();
       user.status = false;
       await user.save();
+      UserHandlerFactory.softDeleteUser({ id });
       return {
         statusCode: 200,
         status: 'success',
-        message: 'update password success',
+        message: 'Delete user success',
       };
     } catch (error) {
       throw new InternalServerErrorException();

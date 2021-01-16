@@ -104,3 +104,8 @@ export class UpdatePasswordEventDto {
   @IsString()
   password: string;
 }
+
+export class DeleteUserEventDto {
+  @IsUUID()
+  id: string;
+}

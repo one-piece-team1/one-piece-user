@@ -1,7 +1,7 @@
 import { UserEventPublishersFactory } from '../publishers';
 import { User } from '../users/user.entity';
 import * as Event from '../events';
-import { UpdatePasswordEventDto } from '../users/dto';
+import { DeleteUserEventDto, UpdatePasswordEventDto } from '../users/dto';
 
 class UserHandler {
   // one server only listen to one exchange
@@ -46,6 +46,25 @@ class UserHandler {
       );
     });
   }
+
+  /**
+   * @description Soft delete user event
+   * @public
+   * @param {DeleteUserEventDto} deleteUserEventDto
+   * @returns {void}
+   */
+  public softDeleteUser(deleteUserEventDto: DeleteUserEventDto): void {
+    const pubExchanges: string[] = [this.onepieceTripExchange];
+    pubExchanges.forEach((exchange: string) => {
+      UserEventPublishersFactory.createPub(
+        {
+          type: Event.UserEvent.SOFTDELETEUSER,
+          data: deleteUserEventDto,
+        },
+        exchange,
+      );
+    });
+  }
 }
 
 /**
@@ -59,7 +78,7 @@ export class UserHandlerFactory {
    * @param {user} User
    * @returns {void}
    */
-  static createUser(user: User) {
+  static createUser(user: User): void {
     return new UserHandler().createUser(user);
   }
 
@@ -70,7 +89,18 @@ export class UserHandlerFactory {
    * @param {UpdatePasswordEventDto} updatePasswordEventDto
    * @returns {void}
    */
-  static updateUserPassword(updatePasswordEventDto: UpdatePasswordEventDto) {
+  static updateUserPassword(updatePasswordEventDto: UpdatePasswordEventDto): void {
     return new UserHandler().updateUserPassword(updatePasswordEventDto);
+  }
+
+  /**
+   * @description Soft delete user event
+   * @static
+   * @public
+   * @param {DeleteUserEventDto} deleteUserEventDto
+   * @returns {void}
+   */
+  static softDeleteUser(deleteUserEventDto: DeleteUserEventDto): void {
+    return new UserHandler().softDeleteUser(deleteUserEventDto);
   }
 }
