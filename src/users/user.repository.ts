@@ -200,6 +200,7 @@ export class UserRepository extends Repository<User> {
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(verifyUpdatePasswordDto.password, user.salt);
       await user.save();
+      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return {
         statusCode: 200,
         status: 'success',
@@ -258,6 +259,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException(error.message);
       }
     }
+    UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
     return {
       statusCode: 200,
       status: 'success',
