@@ -6,4 +6,8 @@ import { Trip } from './trip.entity';
 export class TripRepository extends Repository<Trip> {
   private readonly repoManager: EntityManager = getManager();
   private readonly logger: Logger = new Logger('TripRepository');
+
+  public createTrip(trip: Trip) {
+    this.logger.log(trip, 'createTrip');
+  }
 }

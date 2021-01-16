@@ -89,8 +89,8 @@ export class AMQPHandlerFactory {
    * @param {string | undefined} exchangeName
    * @returns {Promise<unknown>}
    */
-  static createPub(message: any, exchangeName?: string) {
-    return new AMQPHandler().publishData(message, exchangeName);
+  static async createPub(message: any, exchangeName?: string) {
+    return await new AMQPHandler().publishData(message, exchangeName);
   }
 
   /**
@@ -100,7 +100,7 @@ export class AMQPHandlerFactory {
    * @param {string | undefined} exchangeName
    * @returns {Promise<unknown>}
    */
-  static createSub(queueName: string, exchangeName?: string) {
-    return new AMQPHandler().subscribeData(queueName, exchangeName);
+  static async createSub(queueName: string, exchangeName?: string) {
+    return await new AMQPHandler().subscribeData(queueName, exchangeName);
   }
 }

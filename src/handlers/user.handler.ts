@@ -1,5 +1,4 @@
-import { AMQPHandlerFactory } from 'rabbitmq';
-import { UserCreditDto } from 'users/dto';
+import { AMQPHandlerFactory } from '../rabbitmq';
 import { User } from '../users/user.entity';
 import * as Event from '../events';
 
