@@ -1,5 +1,6 @@
 import { AMQPHandlerFactory } from 'rabbitmq';
 import { UserCreditDto } from 'users/dto';
+import { User } from '../users/user.entity';
 import * as Event from '../events';
 
 class UserHandler {
@@ -11,21 +12,16 @@ class UserHandler {
   /**
    * @description Create user with microservice communication by RMQ
    * @public
-   * @param {UserCreditDto} userCreditDto
+   * @param {User} user
    * @returns {void}
    */
-  createUser(userCreditDto: UserCreditDto) {
-    const { username, email, password } = userCreditDto;
+  createUser(user: User) {
     const pubExchanges: string[] = [this.onepieceTripExchange];
     pubExchanges.forEach((exchange: string) => {
       AMQPHandlerFactory.createPub(
         {
           type: Event.UserEvent.CREATEUSER,
-          data: {
-            username,
-            email,
-            password,
-          },
+          data: user,
         },
         exchange,
       );
@@ -40,10 +36,10 @@ export class UserHandlerFactory {
   /**
    * @description Create user with microservice communication by RMQ
    * @public
-   * @param {UserCreditDto} userCreditDto
+   * @param {user} User
    * @returns {void}
    */
-  static createUser(userCreditDto: UserCreditDto) {
-    return new UserHandler().createUser(userCreditDto);
+  static createUser(user: User) {
+    return new UserHandler().createUser(user);
   }
 }

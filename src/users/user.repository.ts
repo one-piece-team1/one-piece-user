@@ -38,7 +38,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException();
       }
     }
-    UserHandlerFactory.createUser(userCreditDto);
+    UserHandlerFactory.createUser(user);
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
