@@ -35,7 +35,7 @@ export class Trip extends BaseEntity {
     (user) => user.trips,
   )
   @JoinColumn()
-  user: User;
+  publisher: User;
 
   @ManyToMany(
     (type) => User,

@@ -81,7 +81,7 @@ export class User extends BaseEntity {
    */
   @OneToMany(
     () => Trip,
-    (trip) => trip.user,
+    (trip) => trip.publisher,
   )
   @JoinColumn()
   trips: Trip[];
