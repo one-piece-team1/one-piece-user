@@ -1,15 +1,4 @@
-import {
-  IsString,
-  MinLength,
-  MaxLength,
-  Matches,
-  IsEmail,
-  IsOptional,
-  IsInt,
-  Min,
-  Max,
-  IsIn,
-} from 'class-validator';
+import { IsString, MinLength, MaxLength, Matches, IsEmail, IsOptional, IsInt, Min, Max, IsIn } from 'class-validator';
 import * as EUser from '../enums';
 
 export class UserCreditDto {

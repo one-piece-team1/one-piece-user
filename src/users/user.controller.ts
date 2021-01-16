@@ -1,27 +1,5 @@
-import {
-  Controller,
-  Post,
-  Body,
-  ValidationPipe,
-  Get,
-  Request,
-  UseGuards,
-  HttpStatus,
-  Delete,
-  Param,
-  ParseUUIDPipe,
-  Put,
-  SetMetadata,
-} from '@nestjs/common';
-import {
-  SigninCreditDto,
-  UserCreditDto,
-  UserForgetDto,
-  VerifyKeyDto,
-  VerifyUpdatePasswordDto,
-  UserUpdatePassDto,
-  UpdateSubscription,
-} from './dto';
+import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata } from '@nestjs/common';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import * as Express from 'express';
@@ -50,9 +28,7 @@ export class UserController {
 
   @Get('/paging')
   @UseGuards(AuthGuard(['jwt']))
-  getUsers(
-    @Request() req: Express.Request,
-  ): Promise<{ users: User[]; count: number } | Error> {
+  getUsers(@Request() req: Express.Request): Promise<{ users: User[]; count: number } | Error> {
     const searchDto: IUser.ISearch = req.query;
     const isAdmin: boolean = req.user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUsers(searchDto, isAdmin);
@@ -79,91 +55,63 @@ export class UserController {
 
   @Get('/:id/info')
   @UseGuards(AuthGuard(['jwt']))
-  getUserById(
-    @CurrentUser() user: IUser.UserInfo,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<IUser.ResponseBase> {
+  getUserById(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IUser.ResponseBase> {
     const isAdmin: boolean = user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUserById(id, isAdmin);
   }
 
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(
-    @CurrentUser() user: IUser.UserInfo,
-  ): Promise<IUser.ResponseBase> {
+  googleAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IUser.ResponseBase> {
     return this.userService.googleLogin(user);
   }
 
   @Get('/facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
-  fbAuthRedirect(
-    @CurrentUser() user: IUser.UserInfo,
-  ): Promise<IUser.ResponseBase> {
+  fbAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IUser.ResponseBase> {
     return this.userService.fbLogin(user);
   }
 
   @Post('/signup')
-  signUp(
-    @Body(ValidationPipe) userCreditDto: UserCreditDto,
-  ): Promise<IUser.ResponseBase> {
+  signUp(@Body(ValidationPipe) userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
     return this.userService.signUp(userCreditDto);
   }
 
   @Post('/signin')
-  signIn(
-    @Body(ValidationPipe) signinCreditDto: SigninCreditDto,
-  ): Promise<IUser.SignInResponse> {
+  signIn(@Body(ValidationPipe) signinCreditDto: SigninCreditDto): Promise<IUser.SignInResponse> {
     return this.userService.signIn(signinCreditDto);
   }
 
   @Post('/forgets/generates')
-  createUserForget(
-    @Body(ValidationPipe) userForgetDto: UserForgetDto,
-  ): Promise<IUser.ResponseBase> {
+  createUserForget(@Body(ValidationPipe) userForgetDto: UserForgetDto): Promise<IUser.ResponseBase> {
     return this.userService.createUserForget(userForgetDto);
   }
 
   @Post('/forgets/verifies')
-  validateVerifyKey(
-    @Body(ValidationPipe) verifyKeyDto: VerifyKeyDto,
-  ): Promise<IUser.ResponseBase> {
+  validateVerifyKey(@Body(ValidationPipe) verifyKeyDto: VerifyKeyDto): Promise<IUser.ResponseBase> {
     return this.userService.validateVerifyKey(verifyKeyDto);
   }
 
   @Post('/forgets/confirms')
-  verifyUpdatePassword(
-    @Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto,
-  ): Promise<IUser.ResponseBase> {
+  verifyUpdatePassword(@Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IUser.ResponseBase> {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
   }
 
   @Put('/:id/password')
   @UseGuards(AuthGuard(['jwt']))
-  userUpdatePassword(
-    @CurrentUser() user: IUser.UserInfo,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto,
-  ): Promise<IUser.ResponseBase> {
+  userUpdatePassword(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto): Promise<IUser.ResponseBase> {
     return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
   }
 
   @Put('/:id/subscribes')
   @UseGuards(AuthGuard(['jwt']))
-  updateSubscribePlan(
-    @CurrentUser() user: IUser.UserInfo,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(ValidationPipe) updateSubPlan: UpdateSubscription,
-  ): Promise<IUser.ResponseBase> {
+  updateSubscribePlan(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) updateSubPlan: UpdateSubscription): Promise<IUser.ResponseBase> {
     return this.userService.updateSubscribePlan(updateSubPlan, id, user.id);
   }
 
   @Delete('/:id')
   @UseGuards(AuthGuard(['jwt']))
-  softDeleteUser(
-    @CurrentUser() user: IUser.UserInfo,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<IUser.ResponseBase> {
+  softDeleteUser(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IUser.ResponseBase> {
     return this.userService.softDeleteUser(id, user.id);
   }
 }

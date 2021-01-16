@@ -24,12 +24,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
    * @param {VerifyCallback} done
    * @returns {Promise<void>}
    */
-  async validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: any,
-    done: VerifyCallback,
-  ) {
+  async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback) {
     const { name, emails, photos } = profile;
     const jwtAccessToken = await this.jwtService.sign({
       username: `${name.familyName}${name.givenName}`,

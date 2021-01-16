@@ -103,7 +103,7 @@ const configs = {
       port: process.env.DBPORT || 5434,
       username: process.env.DBUSERNAME || 'postgres',
       password: process.env.DBPASSWORD || '123',
-      database: process.env.DBDATABASE || 'lib',
+      database: process.env.DBDATABASE || 'onepiece',
       schema: process.env.DBSCHEMA || 'public',
       userTable: process.env.DBUSERTABLE || 'user',
     },

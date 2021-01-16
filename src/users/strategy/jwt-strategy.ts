@@ -1,12 +1,7 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { JwtPayload } from '../interfaces';
-import {
-  Injectable,
-  Inject,
-  UnauthorizedException,
-  NotAcceptableException,
-} from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException, NotAcceptableException } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Request } from 'express';
 import { UserRepository } from '../user.repository';
@@ -35,23 +30,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
    * @param {JwtPayload} payload
    * @returns {Promise<User | JwtPayload>}
    */
-  async validate(
-    req: Request,
-    payload: JwtPayload,
-  ): Promise<User | JwtPayload> {
+  async validate(req: Request, payload: JwtPayload): Promise<User | JwtPayload> {
     // check token expired time
     const jwtExp = payload.exp * 1000;
-    if (Date.now() >= jwtExp)
-      throw new UnauthorizedException('Token is expired');
+    if (Date.now() >= jwtExp) throw new UnauthorizedException('Token is expired');
 
     const { username } = payload;
 
     // check blacklists
-    const blacklists: string[] = await this.redisClient.lrange(
-      'blacklist',
-      0,
-      99999999,
-    );
+    const blacklists: string[] = await this.redisClient.lrange('blacklist', 0, 99999999);
     if (blacklists.indexOf(req.headers.authorization) >= 0) {
       throw new UnauthorizedException();
     }
