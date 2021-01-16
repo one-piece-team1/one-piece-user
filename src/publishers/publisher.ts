@@ -26,7 +26,7 @@ export class UserEventPublishers {
           });
           channel.publish(exchangeName, '', Buffer.from(JSON.stringify(message)));
           resolve(true);
-          this.logger.log(message, 'UserEventPublishers-PublishData');
+          this.logger.log(JSON.stringify(message), 'UserEventPublishers-PublishData');
         });
       });
     });
