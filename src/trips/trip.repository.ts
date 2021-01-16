@@ -7,7 +7,7 @@ export class TripRepository extends Repository<Trip> {
   private readonly repoManager: EntityManager = getManager();
   private readonly logger: Logger = new Logger('TripRepository');
 
-  public createTrip(trip: Trip) {
-    this.logger.log(trip, 'createTrip');
+  public createTrip(tripReq: Trip): void {
+    this.repoManager.save(Trip, tripReq).catch((err) => this.logger.log(err.message, 'CreateTrip'));
   }
 }

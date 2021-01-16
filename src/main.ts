@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module';
 import { config } from '../config';
-import { AMQPHandlerFactory } from './rabbitmq';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule);

@@ -52,7 +52,6 @@ export class UserEventSubscribers {
               channel.consume(
                 q.queue,
                 (msg: amqp.Message) => {
-                  this.logger.log(msg.content.toString(), 'UserEventSubscribers-SubscribeData');
                   if (msg.content) {
                     this.execute(msg.content.toString());
                     resolve(true);
@@ -73,7 +72,7 @@ export class UserEventSubscribers {
    */
   execute(event) {
     const jsonEvent: IReceiveEvent = JSON.parse(event);
-    console.log('UserEventSubscribers: ', jsonEvent);
+    this.logger.log('UserEventSubscribers: ', event);
     switch (jsonEvent.type) {
       case Event.TripEvent.CREATETRIP:
         return this.tripRepository.createTrip(jsonEvent.data);
