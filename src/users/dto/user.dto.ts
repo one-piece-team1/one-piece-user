@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, Matches, IsEmail, IsOptional, IsInt, Min, Max, IsIn } from 'class-validator';
+import { IsString, MinLength, MaxLength, Matches, IsEmail, IsOptional, IsInt, Min, Max, IsIn, IsUUID } from 'class-validator';
 import * as EUser from '../enums';
 
 export class UserCreditDto {
@@ -92,4 +92,20 @@ export class UpdateSubscription {
   @Min(1)
   @Max(12)
   subRange: number;
+}
+
+export class UpdatePasswordEventDto {
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  salt: string;
+
+  @IsString()
+  password: string;
+}
+
+export class DeleteUserEventDto {
+  @IsUUID()
+  id: string;
 }

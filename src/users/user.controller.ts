@@ -103,6 +103,9 @@ export class UserController {
     return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
   }
 
+  /**
+   * @deprecated
+   */
   @Put('/:id/subscribes')
   @UseGuards(AuthGuard(['jwt']))
   updateSubscribePlan(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) updateSubPlan: UpdateSubscription): Promise<IUser.ResponseBase> {

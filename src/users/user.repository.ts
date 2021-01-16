@@ -38,7 +38,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException();
       }
     }
-    UserHandlerFactory.createUser(userCreditDto);
+    UserHandlerFactory.createUser(user);
     return { statusCode: 201, status: 'success', message: 'signup success' };
   }
 
@@ -64,6 +64,7 @@ export class UserRepository extends Repository<User> {
         return { statusCode: 500, status: 'error', message: error.message };
       }
     }
+    UserHandlerFactory.createUser(user);
     return { statusCode: 201, status: 'success', message: tempPass };
   }
 
@@ -199,6 +200,7 @@ export class UserRepository extends Repository<User> {
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(verifyUpdatePasswordDto.password, user.salt);
       await user.save();
+      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return {
         statusCode: 200,
         status: 'success',
@@ -257,6 +259,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException(error.message);
       }
     }
+    UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
     return {
       statusCode: 200,
       status: 'success',
@@ -266,6 +269,7 @@ export class UserRepository extends Repository<User> {
 
   /**
    * @description Update user subscribe plan and changing user role
+   * @deprecated
    * @public
    * @param {UpdateSubscription} updateSubPlan
    * @param {string} id
@@ -315,10 +319,11 @@ export class UserRepository extends Repository<User> {
       if (!user) throw new NotAcceptableException();
       user.status = false;
       await user.save();
+      UserHandlerFactory.softDeleteUser({ id });
       return {
         statusCode: 200,
         status: 'success',
-        message: 'update password success',
+        message: 'Delete user success',
       };
     } catch (error) {
       throw new InternalServerErrorException();

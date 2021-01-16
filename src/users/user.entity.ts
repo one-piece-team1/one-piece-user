@@ -81,13 +81,13 @@ export class User extends BaseEntity {
    */
   @OneToMany(
     () => Trip,
-    (trip) => trip.user,
+    (trip) => trip.publisher,
   )
   @JoinColumn()
   trips: Trip[];
 
   @ManyToMany(
-    (type) => Trip,
+    () => Trip,
     (trip) => trip.viewers,
   )
   @JoinColumn()
@@ -97,21 +97,21 @@ export class User extends BaseEntity {
    * @description Following Area
    */
   @ManyToMany(
-    (type) => User,
+    () => User,
     (user) => user.following,
   )
   @JoinColumn()
   followers: User[];
 
   @ManyToMany(
-    (type) => User,
+    () => User,
     (user) => user.followers,
   )
   @JoinColumn()
   following: User[];
 
   @OneToMany(
-    (type) => User,
+    () => User,
     (user) => user.blockLists,
   )
   @JoinColumn()
@@ -125,12 +125,12 @@ export class User extends BaseEntity {
 
   @AfterLoad()
   async countFollowers() {
-    this.followerCount = this.followers.length;
+    this.followerCount = this.followers ? this.followers.length : 0;
   }
 
   @AfterLoad()
   async countFollowings() {
-    this.followingCount = this.following.length;
+    this.followingCount = this.following ? this.following.length : 0;
   }
 
   /**

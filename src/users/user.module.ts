@@ -8,6 +8,7 @@ import { UserRepository } from './user.repository';
 import { GoogleStrategy, JwtStrategy, FacebookStrategy } from './strategy';
 import { config } from '../../config';
 import { TripRepository } from '../trips/trip.repository';
+import { UserEventSubscribers } from '../subscribers';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { TripRepository } from '../trips/trip.repository';
     TypeOrmModule.forFeature([UserRepository, TripRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy],
+  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers],
   exports: [PassportModule],
 })
 export class UserModule {}

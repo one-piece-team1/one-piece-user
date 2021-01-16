@@ -1,10 +1,10 @@
-import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 import * as ETrip from './enums';
 
 @Entity()
 export class Trip extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ type: 'timestamp', nullable: false })
@@ -35,10 +35,10 @@ export class Trip extends BaseEntity {
     (user) => user.trips,
   )
   @JoinColumn()
-  user: User;
+  publisher: User;
 
   @ManyToMany(
-    (type) => User,
+    () => User,
     (user) => user.views,
   )
   @JoinColumn()

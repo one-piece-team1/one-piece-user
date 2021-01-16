@@ -506,6 +506,7 @@ export class UserService {
 
   /**
    * @description Update subscribe plan
+   * @deprecated
    * @public
    * @param {UpdateSubscription} updateSubPlan
    * @param {string} id
