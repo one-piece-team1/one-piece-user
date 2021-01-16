@@ -26,13 +26,8 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
    * @param {VerifyCallback} done
    * @returns {Promise<void>}
    */
-  async validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: Profile,
-    done: (err: any, user?: any, info?: any) => void,
-  ): Promise<void> {
-    const { id, name, emails } = profile;
+  async validate(accessToken: string, refreshToken: string, profile: Profile, done: (err: any, user?: any, info?: any) => void): Promise<void> {
+    const { name, emails } = profile;
     try {
       const jwtAccessToken = await this.jwtService.sign({
         username: `${name.familyName}${name.givenName}`,
@@ -42,11 +37,9 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       });
       const user = {
         email: emails[0].value,
-        firstName: name.givenName,
-        lastName: name.familyName,
+        username: `${name.familyName}${name.givenName}`,
         accessToken: jwtAccessToken,
       };
-      this.logger.log(user, 'Validate');
       done(null, user, {});
     } catch (error) {
       this.logger.log(error.message, 'Validate-Err');

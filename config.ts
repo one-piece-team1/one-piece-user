@@ -58,6 +58,11 @@ const configs = {
     // Server Setting
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
+    
+    COMPANY_LINK: {
+      FB: "http://www.facebook.com/",
+      TWITTER: "http://www.twitter.com/",
+    },
 
     JWT: {
       KEY: process.env.JWTKEY || 'lib',
@@ -68,6 +73,8 @@ const configs = {
       ID: process.env.GOOGLEAUTHID,
       SECRET: process.env.GOOGLEAUTHSECRET,
       CALLBACKURL: process.env.GOOGLEAUTHCALLBACKURL,
+      USER: process.env.GOOGLEMAILSUER,
+      PASS: process.env.GOOGLEMAILPASS,
     },
 
     FB: {
@@ -77,9 +84,9 @@ const configs = {
     },
 
     EVENT_STORE_SETTINGS: {
-      protocol: process.env.EVENTSTOREPROTOCOL || 'http',
-      hostname: process.env.EVENTSTOREHOSTNAME || '0.0.0.0',
-      tcpPort: process.env.EVENTSTORETCPPORT || 1113,
+      protocol: process.env.EVENTSTOREPROTOCOL || 'amqp',
+      hostname: process.env.EVENTSTOREHOSTNAME || 'localhost',
+      tcpPort: process.env.EVENTSTORETCPPORT || 5672,
       httpPort: process.env.EVENTSTOREHTTPPORT || 2113,
       credentials: {
         username: process.env.EVENTSTORECREDENTIALSUSERNAME || 'lib-test',
@@ -93,15 +100,15 @@ const configs = {
 
     DB_SETTINGS: {
       host: process.env.DBHOST || 'localhost',
-      port: process.env.DBPORT || 5432,
+      port: process.env.DBPORT || 5434,
       username: process.env.DBUSERNAME || 'postgres',
       password: process.env.DBPASSWORD || '123',
-      database: process.env.DBDATABASE || 'lib',
+      database: process.env.DBDATABASE || 'onepiece',
       schema: process.env.DBSCHEMA || 'public',
-      userTable: process.env.DBRATETABLE || 'user',
+      userTable: process.env.DBUSERTABLE || 'user',
     },
 
-    REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+    REDIS_URL: process.env.REDIS_URL || "redis://127.0.0.1:6382",
 
     GEO_CONFIGS: {
       key: process.env.GEOKEY,

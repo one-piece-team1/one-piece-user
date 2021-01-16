@@ -7,6 +7,8 @@ import { UserService } from './user.service';
 import { UserRepository } from './user.repository';
 import { GoogleStrategy, JwtStrategy, FacebookStrategy } from './strategy';
 import { config } from '../../config';
+import { TripRepository } from '../trips/trip.repository';
+import { UserEventSubscribers } from '../subscribers';
 
 @Module({
   imports: [
@@ -26,10 +28,10 @@ import { config } from '../../config';
         algorithms: ['HS256'],
       },
     }),
-    TypeOrmModule.forFeature([UserRepository]),
+    TypeOrmModule.forFeature([UserRepository, TripRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy],
+  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers],
   exports: [PassportModule],
 })
 export class UserModule {}

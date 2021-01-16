@@ -9,8 +9,8 @@ export class StandardRequest {
     return new Promise((resolve, reject) => {
       httpRequest
         .default(options)
-        .then(res => resolve(res))
-        .catch(err => reject(err));
+        .then((res) => resolve(res))
+        .catch((err) => reject(err));
     });
   }
 }

@@ -21,10 +21,6 @@ async function bootstrap() {
   });
 
   await app.listen(config.PORT);
-  Logger.log(
-    `Server start on ${config.HOST}:${config.PORT}`,
-    'Bootstrap',
-    true,
-  );
+  Logger.log(`Server start on ${config.HOST}:${config.PORT}`, 'Bootstrap', true);
 }
 bootstrap();

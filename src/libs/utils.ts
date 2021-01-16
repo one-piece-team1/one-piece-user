@@ -7,13 +7,7 @@ import { Logger } from '@nestjs/common';
  * @returns {void}
  */
 export function memInfo(memName: string): void {
-  Logger.log(
-    `Function ${memName} used memory: ${Math.round(
-      (process.memoryUsage().heapUsed / 1024 / 1024) * 100,
-    ) / 100} MB`,
-    'Memory-Info',
-    true,
-  );
+  Logger.log(`Function ${memName} used memory: ${Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100} MB`, 'Memory-Info', true);
 }
 
 /**
@@ -38,7 +32,7 @@ export function isJsonString(str: string): boolean {
  * @param {number} months
  * @returns {Date}
  */
-export function addMonths(date: Date, months: number) {
+export function addMonths(date: Date, months: number): Date {
   const d = date.getDate();
   date.setMonth(date.getMonth() + +months);
   if (date.getDate() !== d) {
