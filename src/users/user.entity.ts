@@ -87,7 +87,7 @@ export class User extends BaseEntity {
   trips: Trip[];
 
   @ManyToMany(
-    (type) => Trip,
+    () => Trip,
     (trip) => trip.viewers,
   )
   @JoinColumn()
@@ -97,21 +97,21 @@ export class User extends BaseEntity {
    * @description Following Area
    */
   @ManyToMany(
-    (type) => User,
+    () => User,
     (user) => user.following,
   )
   @JoinColumn()
   followers: User[];
 
   @ManyToMany(
-    (type) => User,
+    () => User,
     (user) => user.followers,
   )
   @JoinColumn()
   following: User[];
 
   @OneToMany(
-    (type) => User,
+    () => User,
     (user) => user.blockLists,
   )
   @JoinColumn()

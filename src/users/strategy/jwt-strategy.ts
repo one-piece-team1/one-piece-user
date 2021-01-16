@@ -1,7 +1,7 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { JwtPayload } from '../interfaces';
-import { Injectable, Inject, UnauthorizedException, NotAcceptableException } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Request } from 'express';
 import { UserRepository } from '../user.repository';
