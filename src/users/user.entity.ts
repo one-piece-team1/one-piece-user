@@ -125,12 +125,12 @@ export class User extends BaseEntity {
 
   @AfterLoad()
   async countFollowers() {
-    this.followerCount = this.followers.length;
+    this.followerCount = this.followers ? this.followers.length : 0;
   }
 
   @AfterLoad()
   async countFollowings() {
-    this.followingCount = this.following.length;
+    this.followingCount = this.following ? this.following.length : 0;
   }
 
   /**
