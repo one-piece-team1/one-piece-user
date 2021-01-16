@@ -9,7 +9,6 @@ import { GoogleStrategy, JwtStrategy, FacebookStrategy } from './strategy';
 import { config } from '../../config';
 import { TripRepository } from '../trips/trip.repository';
 import { UserEventSubscribers } from '../subscribers';
-import { AMQPHandler } from '../rabbitmq';
 
 @Module({
   imports: [
@@ -32,7 +31,7 @@ import { AMQPHandler } from '../rabbitmq';
     TypeOrmModule.forFeature([UserRepository, TripRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, AMQPHandler, UserEventSubscribers],
+  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers],
   exports: [PassportModule],
 })
 export class UserModule {}
