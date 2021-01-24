@@ -2,6 +2,7 @@ import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, Befo
 import * as bcrypt from 'bcrypt';
 import * as EUser from './enums';
 import { Trip } from '../trips/trip.entity';
+import { Post } from '../posts/post.entity';
 
 @Entity()
 @Unique(['username', 'email'])
@@ -77,7 +78,7 @@ export class User extends BaseEntity {
   profileImage?: string;
 
   /**
-   * @description Relation Area
+   * @description Relation Area with trip
    */
   @OneToMany(
     () => Trip,
@@ -92,6 +93,25 @@ export class User extends BaseEntity {
   )
   @JoinColumn()
   views: Trip[];
+
+  /**
+   * @description Relation Area with post
+   */
+  @OneToMany(
+    () => Post,
+    (post) => post.publisher,
+  )
+  posts: Post[];
+
+  /**
+   * @description Relation Area with post like
+   */
+  @ManyToMany(
+    () => Post,
+    (post) => post.likeUsers,
+  )
+  @JoinColumn()
+  likePosts: Post[];
 
   /**
    * @description Following Area

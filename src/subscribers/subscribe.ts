@@ -4,10 +4,12 @@ import { config } from '../../config';
 import * as Event from '../events';
 import { TripRepository } from '../trips/trip.repository';
 import { Trip } from '../trips/trip.entity';
+import { PostRepository } from '../posts/post.repository';
+import { Post } from '../posts/post.entity';
 
 interface IReceiveEvent {
-  type: Event.TripEvent;
-  data: Trip;
+  type: Event.TripEvent | Event.PostEvent;
+  data: Trip | Post;
 }
 
 /**
@@ -20,7 +22,7 @@ export class UserEventSubscribers {
   // seperate different event by type for different services
   private readonly defaultExchangeName: string = 'onepiece-user';
 
-  constructor(private readonly tripRepository: TripRepository) {
+  constructor(private readonly tripRepository: TripRepository, private readonly postRepository: PostRepository) {
     this.subscribeData('onepiece_user_queue');
   }
 
@@ -75,7 +77,9 @@ export class UserEventSubscribers {
     this.logger.log(event, 'UserEventSubscribers');
     switch (jsonEvent.type) {
       case Event.TripEvent.CREATETRIP:
-        return this.tripRepository.createTrip(jsonEvent.data);
+        return this.tripRepository.createTrip(jsonEvent.data as Trip);
+      case Event.PostEvent.CREATEPOST:
+        return this.postRepository.createPost(jsonEvent.data as Post);
     }
   }
 }
