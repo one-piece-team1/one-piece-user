@@ -1,7 +1,7 @@
 import { UserEventPublishersFactory } from '../publishers';
 import { User } from '../users/user.entity';
 import * as Event from '../events';
-import { DeleteUserEventDto, UpdatePasswordEventDto } from '../users/dto';
+import { DeleteUserEventDto, UpdatePasswordEventDto, UpdateUserAdditionalInfoPublishDto } from '../users/dto';
 
 class UserHandler {
   // one server only listen to one exchange
@@ -41,6 +41,25 @@ class UserHandler {
         {
           type: Event.UserEvent.UPDATEUSERPASSWORD,
           data: updatePasswordEventDto,
+        },
+        exchange,
+      );
+    });
+  }
+
+  /**
+   * @description Update user additional information
+   * @public
+   * @param {UpdateUserAdditionalInfoPublishDto} updateUserAdditionalInfoPublishDto
+   * @returns {void}
+   */
+  public updateUserAdditionalInfo(updateUserAdditionalInfoPublishDto: UpdateUserAdditionalInfoPublishDto) {
+    const pubExchanges: string[] = [this.onepieceTripExchange];
+    pubExchanges.forEach((exchange: string) => {
+      UserEventPublishersFactory.createPub(
+        {
+          type: Event.UserEvent.UPDATEUSERADDITIONALINFO,
+          data: updateUserAdditionalInfoPublishDto,
         },
         exchange,
       );
@@ -91,6 +110,17 @@ export class UserHandlerFactory {
    */
   static updateUserPassword(updatePasswordEventDto: UpdatePasswordEventDto): void {
     return new UserHandler().updateUserPassword(updatePasswordEventDto);
+  }
+
+  /**
+   * @description Update user additional information
+   * @static
+   * @public
+   * @param {UpdateUserAdditionalInfoPublishDto} updateUserAdditionalInfoPublishDto
+   * @returns {void}
+   */
+  static updateUserAdditionalInfo(updateUserAdditionalInfoPublishDto: UpdateUserAdditionalInfoPublishDto) {
+    return new UserHandler().updateUserAdditionalInfo(updateUserAdditionalInfoPublishDto);
   }
 
   /**

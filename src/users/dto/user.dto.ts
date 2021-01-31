@@ -111,7 +111,7 @@ export class DeleteUserEventDto {
   id: string;
 }
 
-export class UpdateUserInfoDto {
+export class UpdateUserAdditionalInfoDto {
   @IsOptional()
   gender?: EUser.EUserGender;
 
@@ -120,7 +120,17 @@ export class UpdateUserInfoDto {
 
   @IsOptional()
   desc?: string;
+}
 
+export class UpdateUserAdditionalInfoInServerDto extends UpdateUserAdditionalInfoDto {
   @IsOptional()
   files?: IUser.BufferedFile[];
+}
+
+export class UpdateUserAdditionalInfoPublishDto extends UpdateUserAdditionalInfoDto {
+  @IsUUID()
+  id: string;
+
+  @IsOptional()
+  profileImage?: string;
 }

@@ -4,13 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserInfoDto } from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
 import * as IUser from './interfaces';
 import { User } from './user.entity';
 import { config } from '../../config';
 import { UploadeService } from './uploads/cloudinary.service';
+import { UserHandlerFactory } from 'handlers';
 
 @Injectable()
 export class UserService {
@@ -532,7 +533,7 @@ export class UserService {
     }
   }
 
-  public async updateUserInfo(updateUserInfoDto: UpdateUserInfoDto, id: string, tokenId: string) {
+  public async updateUserInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string) {
     if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
     const { files } = updateUserInfoDto;
 
@@ -540,7 +541,13 @@ export class UserService {
     try {
       const user_result = await this.userRepository.updateUserInfo(updateUserInfoDto, id);
       if (user_result !== undefined) {
-        console.log(user_result);
+        UserHandlerFactory.updateUserAdditionalInfo({
+          id: user_result.id,
+          gender: user_result.gender,
+          age: user_result.age,
+          desc: user_result.desc,
+          profileImage: user_result.profileImage,
+        });
       }
       return {
         statusCode: HttpStatus.CREATED,

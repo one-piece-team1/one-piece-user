@@ -3,7 +3,7 @@ import { Repository, EntityRepository, getManager, EntityManager, Like, Not } fr
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
-import { SigninCreditDto, UpdateSubscription, UpdateUserInfoDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
+import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
@@ -311,11 +311,11 @@ export class UserRepository extends Repository<User> {
   /**
    * @description Update user info
    * @public
-   * @param {UpdateUserInfoDto} updateUserInfoDto
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
    * @param {string} id
    * @returns {Promise<User>}
    */
-  public async updateUserInfo(updateUserInfoDto: UpdateUserInfoDto, id: string): Promise<User> {
+  public async updateUserInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string): Promise<User> {
     const { gender, age, desc, files } = updateUserInfoDto;
     const user = await this.findOne({ where: { id, status: true } });
     if (!user)

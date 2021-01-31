@@ -80,13 +80,7 @@ export class UploadeService {
     });
 
     Promise.all(promises)
-      .then((resources) => {
-        this.logger.log(resources, 'UploadSuccess');
-        return resources;
-      })
-      .catch((err) => {
-        this.logger.log(err.message, 'UploadFail');
-        return err;
-      });
+      .then((resources) => resources)
+      .catch((err) => err);
   }
 }
