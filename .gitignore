@@ -56,3 +56,6 @@ ex.json
 
 # orm
 ormconfig.json
+
+# public assets
+public/

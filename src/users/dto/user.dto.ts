@@ -1,5 +1,6 @@
-import { IsString, MinLength, MaxLength, Matches, IsEmail, IsOptional, IsInt, Min, Max, IsIn, IsUUID } from 'class-validator';
+import { IsString, MinLength, MaxLength, Matches, IsEmail, IsOptional, IsInt, Min, Max, IsIn, IsUUID, IsNumber } from 'class-validator';
 import * as EUser from '../enums';
+import * as IUser from '../interfaces';
 
 export class UserCreditDto {
   @IsString()
@@ -108,4 +109,18 @@ export class UpdatePasswordEventDto {
 export class DeleteUserEventDto {
   @IsUUID()
   id: string;
+}
+
+export class UpdateUserInfoDto {
+  @IsOptional()
+  gender?: EUser.EUserGender;
+
+  @IsOptional()
+  age?: number;
+
+  @IsOptional()
+  desc?: string;
+
+  @IsOptional()
+  files?: IUser.BufferedFile[];
 }

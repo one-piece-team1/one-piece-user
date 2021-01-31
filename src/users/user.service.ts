@@ -4,12 +4,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription } from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserInfoDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
 import * as IUser from './interfaces';
 import { User } from './user.entity';
 import { config } from '../../config';
+import { UploadeService } from './uploads/cloudinary.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +20,7 @@ export class UserService {
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private jwtService: JwtService,
+    private uploadService: UploadeService,
   ) {}
 
   /**
@@ -520,6 +522,33 @@ export class UserService {
       return await this.userRepository.updateSubscribePlan(updateSubPlan, id);
     } catch (error) {
       this.logger.log(error.message, 'UpdateSubscribePlan');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  public async updateUserInfo(updateUserInfoDto: UpdateUserInfoDto, id: string, tokenId: string) {
+    if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+    const { files } = updateUserInfoDto;
+
+    this.uploadService.uploadBatch(files);
+    try {
+      const user_result = await this.userRepository.updateUserInfo(updateUserInfoDto, id);
+      if (user_result !== undefined) {
+        console.log(user_result);
+      }
+      return {
+        statusCode: HttpStatus.CREATED,
+        status: 'success',
+        message: user_result,
+      };
+    } catch (error) {
+      this.logger.log(error.message, 'UpdateUserInfo');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
