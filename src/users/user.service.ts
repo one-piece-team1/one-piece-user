@@ -536,9 +536,9 @@ export class UserService {
   /**
    * @description Update additional user info
    * @public
-   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto 
-   * @param {string} id 
-   * @param {string} tokenId 
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
+   * @param {string} id
+   * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
   public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
