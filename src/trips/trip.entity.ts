@@ -1,5 +1,6 @@
-import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../users/user.entity';
+import { Post } from '../posts/post.entity';
 import * as ETrip from './enums';
 
 @Entity()
@@ -43,6 +44,15 @@ export class Trip extends BaseEntity {
   )
   @JoinColumn()
   viewers: User[];
+
+  /**
+   * @description Relation Area with post
+   */
+  @OneToMany(
+    () => Post,
+    (post) => post.trip,
+  )
+  posts: Post[];
 
   /**
    * @description Time area

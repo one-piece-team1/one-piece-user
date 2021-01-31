@@ -9,6 +9,7 @@ import { GoogleStrategy, JwtStrategy, FacebookStrategy } from './strategy';
 import { config } from '../../config';
 import { TripRepository } from '../trips/trip.repository';
 import { UserEventSubscribers } from '../subscribers';
+import { PostRepository } from '../posts/post.repository';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { UserEventSubscribers } from '../subscribers';
         algorithms: ['HS256'],
       },
     }),
-    TypeOrmModule.forFeature([UserRepository, TripRepository]),
+    TypeOrmModule.forFeature([UserRepository, TripRepository, PostRepository]),
   ],
   controllers: [UserController],
   providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers],
