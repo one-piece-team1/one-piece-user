@@ -533,13 +533,20 @@ export class UserService {
     }
   }
 
-  public async updateUserInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string) {
+  /**
+   * @description Update additional user info
+   * @public
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto 
+   * @param {string} id 
+   * @param {string} tokenId 
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
     if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
     const { files } = updateUserInfoDto;
-
     this.uploadService.uploadBatch(files);
     try {
-      const user_result = await this.userRepository.updateUserInfo(updateUserInfoDto, id);
+      const user_result = await this.userRepository.updateUserAdditionalInfo(updateUserInfoDto, id);
       if (user_result !== undefined) {
         UserHandlerFactory.updateUserAdditionalInfo({
           id: user_result.id,

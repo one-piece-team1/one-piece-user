@@ -99,8 +99,8 @@ export class UserController {
 
   @Post('/:id/informations/additionals')
   @UseGuards(AuthGuard(['jwt']))
-  updateUserInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto) {
-    return this.userService.updateUserInfo(updateUserInfoDto, id, user.id);
+  updateUserAdditionalInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto) {
+    return this.userService.updateUserAdditionalInfo(updateUserInfoDto, id, user.id);
   }
 
   @Put('/:id/password')

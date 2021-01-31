@@ -7,8 +7,6 @@ import * as IUser from '../interfaces';
 
 @Injectable()
 export class UploadeService {
-  private readonly logger: Logger = new Logger('UploadeService');
-
   constructor() {
     Cloudinary.v2.config({
       cloud_name: config.CLOUDINARY.NAME,
@@ -17,6 +15,11 @@ export class UploadeService {
     });
   }
 
+  /**
+   * @description Check if Directory is exited or not
+   * @private
+   * @returns {Promise<boolean}
+   */
   private isDirectoryExist(): Promise<boolean> {
     const path: string = join(process.cwd(), 'public/assets');
     return new Promise((resolve, reject) => {
@@ -50,6 +53,12 @@ export class UploadeService {
     });
   }
 
+  /**
+   * @description Upload File to cloudinary
+   * @public
+   * @param {IUser.BufferedFile[]} files
+   * @returns {Promise<void>}
+   */
   public async uploadBatch(files: IUser.BufferedFile[]): Promise<void> {
     const promises = [];
 

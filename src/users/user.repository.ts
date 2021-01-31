@@ -315,7 +315,7 @@ export class UserRepository extends Repository<User> {
    * @param {string} id
    * @returns {Promise<User>}
    */
-  public async updateUserInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string): Promise<User> {
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string): Promise<User> {
     const { gender, age, desc, files } = updateUserInfoDto;
     const user = await this.findOne({ where: { id, status: true } });
     if (!user)
