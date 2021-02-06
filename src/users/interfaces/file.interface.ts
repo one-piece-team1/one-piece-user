@@ -1,18 +1,25 @@
-import { type } from 'os';
+export interface BufferedFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: AppMimeType;
+  size: number;
+  buffer: Buffer | string;
+}
 
-export type TMimeType = 'image/png' | 'image/jpeg';
+export interface StoredFile extends HasFile, StoredFileMetadata {}
 
-export interface IStoredFile extends IHasFile, IStoredFileMetadata {}
-
-export interface IHasFile {
+export interface HasFile {
   file: Buffer | string;
 }
-export interface IStoredFileMetadata {
+export interface StoredFileMetadata {
   id: string;
   name: string;
   encoding: string;
-  mimetype: TMimeType;
+  mimetype: AppMimeType;
   size: number;
   updatedAt: Date;
   fileSrc?: string;
 }
+
+export type AppMimeType = 'image/png' | 'image/jpeg' | 'image/jpg';

@@ -10,6 +10,7 @@ import { config } from '../../config';
 import { TripRepository } from '../trips/trip.repository';
 import { UserEventSubscribers } from '../subscribers';
 import { PostRepository } from '../posts/post.repository';
+import { UploadeService } from './uploads/cloudinary.service';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { PostRepository } from '../posts/post.repository';
     TypeOrmModule.forFeature([UserRepository, TripRepository, PostRepository]),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers],
+  providers: [UserService, JwtStrategy, GoogleStrategy, FacebookStrategy, UserEventSubscribers, UploadeService],
   exports: [PassportModule],
 })
 export class UserModule {}

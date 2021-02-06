@@ -4,12 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription } from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from './interfaces';
 import * as IUser from './interfaces';
 import { User } from './user.entity';
 import { config } from '../../config';
+import { UploadeService } from './uploads/cloudinary.service';
+import { UserHandlerFactory } from 'handlers';
 
 @Injectable()
 export class UserService {
@@ -19,6 +21,7 @@ export class UserService {
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private jwtService: JwtService,
+    private uploadService: UploadeService,
   ) {}
 
   /**
@@ -520,6 +523,46 @@ export class UserService {
       return await this.userRepository.updateSubscribePlan(updateSubPlan, id);
     } catch (error) {
       this.logger.log(error.message, 'UpdateSubscribePlan');
+      throw new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  /**
+   * @description Update additional user info
+   * @public
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
+   * @param {string} id
+   * @param {string} tokenId
+   * @returns {Promise<IUser.ResponseBase>}
+   */
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
+    if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+    const { files } = updateUserInfoDto;
+    this.uploadService.uploadBatch(files);
+    try {
+      const user_result = await this.userRepository.updateUserAdditionalInfo(updateUserInfoDto, id);
+      if (user_result !== undefined) {
+        UserHandlerFactory.updateUserAdditionalInfo({
+          id: user_result.id,
+          gender: user_result.gender,
+          age: user_result.age,
+          desc: user_result.desc,
+          profileImage: user_result.profileImage,
+        });
+      }
+      return {
+        statusCode: HttpStatus.CREATED,
+        status: 'success',
+        message: user_result,
+      };
+    } catch (error) {
+      this.logger.log(error.message, 'UpdateUserInfo');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
