@@ -3,7 +3,7 @@ import { Repository, EntityRepository, getManager, EntityManager, Like, Not } fr
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
-import { SigninCreditDto, UpdateSubscription, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
+import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
@@ -13,6 +13,7 @@ import { UserHandlerFactory } from 'handlers';
 export class UserRepository extends Repository<User> {
   private readonly repoManager: EntityManager = getManager();
   private readonly logger = new Logger('UserRepository');
+  private readonly cloudinaryBaseUrl: string = 'https://res.cloudinary.com/ahoyapp/image/upload';
 
   /**
    * @description Sign up user repository action
@@ -305,6 +306,40 @@ export class UserRepository extends Repository<User> {
       status: 'success',
       message: 'Update subscribe success',
     };
+  }
+
+  /**
+   * @description Update user info
+   * @public
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
+   * @param {string} id
+   * @returns {Promise<User>}
+   */
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string): Promise<User> {
+    const { gender, age, desc, files } = updateUserInfoDto;
+    const user = await this.findOne({ where: { id, status: true } });
+    if (!user)
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    if (gender) user.gender = gender;
+    if (age) user.age = age;
+    if (desc) user.desc = desc;
+    if (files && files.length > 0) {
+      const image_src: string = files.map((file) => `${this.cloudinaryBaseUrl}/users/${file.originalname}`)[0];
+      user.profileImage = image_src;
+    }
+    try {
+      await user.save();
+    } catch (error) {
+      this.logger.log(error.message, 'UpdateUserInfo');
+      throw new InternalServerErrorException(error.message);
+    }
+    return user;
   }
 
   /**

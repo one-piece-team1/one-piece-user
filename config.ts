@@ -69,6 +69,13 @@ const configs = {
       SECRET: process.env.JWTSECRET || 'lib',
     },
 
+    CLOUDINARY: {
+      NAME: process.env.CLOUDINARY_APINAME,
+      KEY: process.env.CLOUDINARY_APIKEY,
+      SECRET: process.env.CLOUDINARY_APISECRET,
+      URL: process.env.CLOUDINARY_APIURL,
+    },
+
     GOOGLE: {
       ID: process.env.GOOGLEAUTHID,
       SECRET: process.env.GOOGLEAUTHSECRET,

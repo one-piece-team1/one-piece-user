@@ -1,5 +1,5 @@
 import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata } from '@nestjs/common';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription } from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
 import { UserService } from './user.service';
 import { AuthGuard } from '@nestjs/passport';
 import * as Express from 'express';
@@ -95,6 +95,12 @@ export class UserController {
   @Post('/forgets/confirms')
   verifyUpdatePassword(@Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IUser.ResponseBase> {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
+  }
+
+  @Post('/:id/informations/additionals')
+  @UseGuards(AuthGuard(['jwt']))
+  updateUserAdditionalInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto) {
+    return this.userService.updateUserAdditionalInfo(updateUserInfoDto, id, user.id);
   }
 
   @Put('/:id/password')
