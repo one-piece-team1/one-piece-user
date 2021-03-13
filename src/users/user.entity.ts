@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, BeforeInsert, BeforeUpdate, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany, ManyToMany, AfterLoad } from 'typeorm';
+import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, BeforeInsert, BeforeUpdate, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany, ManyToMany, AfterLoad, JoinTable } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as EUser from './enums';
 import { Trip } from '../trips/trip.entity';
@@ -91,7 +91,7 @@ export class User extends BaseEntity {
     () => Trip,
     (trip) => trip.viewers,
   )
-  @JoinColumn()
+  @JoinTable()
   views: Trip[];
 
   /**
@@ -110,7 +110,7 @@ export class User extends BaseEntity {
     () => Post,
     (post) => post.likeUsers,
   )
-  @JoinColumn()
+  @JoinTable()
   likePosts: Post[];
 
   /**
@@ -120,14 +120,14 @@ export class User extends BaseEntity {
     () => User,
     (user) => user.following,
   )
-  @JoinColumn()
+  @JoinTable()
   followers: User[];
 
   @ManyToMany(
     () => User,
     (user) => user.followers,
   )
-  @JoinColumn()
+  @JoinTable()
   following: User[];
 
   @OneToMany(
