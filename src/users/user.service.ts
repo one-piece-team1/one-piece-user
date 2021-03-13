@@ -117,12 +117,12 @@ export class UserService {
    * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; } | Error>}
    */
-  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; count: number } | Error> {
+  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; take: number; skip: number; count: number } | Error> {
     try {
       if (!searchDto.keyword) searchDto.keyword = '';
       if (!searchDto.sort) searchDto.sort = 'DESC';
 
-      const { users, count } = await this.userRepository.getUsers(searchDto, isAdmin);
+      const { users, count, take, skip } = await this.userRepository.getUsers(searchDto, isAdmin);
 
       if (!users || !count)
         return new HttpException(
@@ -135,6 +135,8 @@ export class UserService {
 
       return {
         users,
+        take,
+        skip,
         count,
       };
     } catch (error) {
