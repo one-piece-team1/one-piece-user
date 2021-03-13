@@ -28,7 +28,7 @@ export class UserController {
 
   @Get('/paging')
   @UseGuards(AuthGuard(['jwt']))
-  getUsers(@Request() req: Express.Request): Promise<{ users: User[]; count: number } | Error> {
+  getUsers(@Request() req: Express.Request): Promise<{ users: User[]; take: number; skip: number; count: number } | Error> {
     const searchDto: IUser.ISearch = req.query;
     const isAdmin: boolean = req.user['role'] === EUser.EUserRole.ADMIN;
     return this.userService.getUsers(searchDto, isAdmin);

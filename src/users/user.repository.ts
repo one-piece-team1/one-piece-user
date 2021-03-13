@@ -103,7 +103,7 @@ export class UserRepository extends Repository<User> {
    * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; }>}
    */
-  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; count: number }> {
+  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; take: number, skip: number; count: number }> {
     const take = searchDto.take ? Number(searchDto.take) : 10;
     const skip = searchDto.skip ? Number(searchDto.skip) : 0;
 
@@ -134,6 +134,8 @@ export class UserRepository extends Repository<User> {
       const [users, count] = await this.repoManager.findAndCount(User, searchOpts);
       return {
         users,
+        take,
+        skip,
         count,
       };
     } catch (error) {
