@@ -20,7 +20,7 @@ export class Trip extends BaseEntity {
     default: ETrip.ETripView.PUBLIC,
     nullable: false,
   })
-  publicStatus: string;
+  publicStatus: ETrip.ETripView;
 
   @Column({ type: 'varchar', nullable: true })
   companyName?: string;
