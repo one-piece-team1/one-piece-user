@@ -7,7 +7,7 @@ import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDt
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
-import { UserHandlerFactory } from 'handlers';
+import { UserHandlerFactory } from '../handlers';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -19,9 +19,9 @@ export class UserRepository extends Repository<User> {
    * @description Sign up user repository action
    * @public
    * @param {UserCreditDto} userCreditDto
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<User>}
    */
-  public async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<User> {
     const { username, email, password } = userCreditDto;
     const user = new User();
     user.username = username;
@@ -36,11 +36,11 @@ export class UserRepository extends Repository<User> {
         // throw 409 error when duplicate username
         throw new ConflictException(`Username: ${username} or Email: ${email} already exists`);
       } else {
-        throw new InternalServerErrorException();
+        throw new InternalServerErrorException(error.message);
       }
     }
-    UserHandlerFactory.createUser(user);
-    return { statusCode: 201, status: 'success', message: 'signup success' };
+    // UserHandlerFactory.createUser(user);
+    return user;
   }
 
   public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<IUser.ResponseBase> {

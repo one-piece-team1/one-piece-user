@@ -1,13 +1,14 @@
-import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata } from '@nestjs/common';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
-import { UserService } from './user.service';
+import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata, HttpException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as Express from 'express';
-import { User } from './user.entity';
-import { CurrentUser } from './get-user.decorator';
 import { RoleGuard } from './guards/local-guard';
-import * as IUser from './interfaces';
+import { CurrentUser } from './get-user.decorator';
+import { User } from './user.entity';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
+import { UserService } from './user.service';
+import * as IShare from '../interfaces';
 import * as EUser from './enums';
+import * as IUser from './interfaces';
 
 @Controller('users')
 export class UserController {
@@ -72,13 +73,29 @@ export class UserController {
     return this.userService.fbLogin(user);
   }
 
+  /**
+   * @description Create new user routes
+   * @routes
+   * @post
+   * @public
+   * @param {UserCreditDto} userCreditDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Post('/signup')
-  signUp(@Body(ValidationPipe) userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
+  signUp(@Body(ValidationPipe) userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.signUp(userCreditDto);
   }
 
+  /**
+   * @description Signing user routes
+   * @routes
+   * @post
+   * @public
+   * @param {SigninCreditDto} signinCreditDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Post('/signin')
-  signIn(@Body(ValidationPipe) signinCreditDto: SigninCreditDto): Promise<IUser.SignInResponse> {
+  signIn(@Body(ValidationPipe) signinCreditDto: SigninCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.signIn(signinCreditDto);
   }
 

@@ -1,41 +1,45 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { UserRepository } from './user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from './interfaces';
-import * as IUser from './interfaces';
 import { User } from './user.entity';
-import { config } from '../../config';
+import { UserRepository } from './user.repository';
+import { UserHandlerFactory } from '../handlers';
 import { UploadeService } from './uploads/cloudinary.service';
-import { UserHandlerFactory } from 'handlers';
+import HTTPResponse from '../libs/response';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
+import * as IShare from '../interfaces';
+import * as IUser from './interfaces';
+import { config } from '../../config';
 
 @Injectable()
 export class UserService {
-  private logger: Logger = new Logger('UserService');
-  private redisClient = new Redis(config.REDIS_URL);
+  private readonly httpResponse: HTTPResponse = new HTTPResponse();
+  private readonly logger: Logger = new Logger('UserService');
+  private readonly redisClient = new Redis(config.REDIS_URL);
   constructor(
     @InjectRepository(UserRepository)
-    private userRepository: UserRepository,
-    private jwtService: JwtService,
-    private uploadService: UploadeService,
+    private readonly userRepository: UserRepository,
+    private readonly jwtService: JwtService,
+    private readonly uploadService: UploadeService,
   ) {}
 
   /**
    * @description Sign up user service action
    * @public
    * @param {UserCreditDto} userCreditDto
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
-      return await this.userRepository.signUp(userCreditDto);
+      const user = await this.userRepository.signUp(userCreditDto);
+      UserHandlerFactory.createUser(user);
+      return this.httpResponse.StatusCreated<string>('signup success');
     } catch (error) {
-      this.logger.log(error.message, 'SignUp');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SignUpError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -49,32 +53,32 @@ export class UserService {
    * @description Sign in user service action
    * @public
    * @param {SigninCreditDto} signinCreditDto
-   * @returns {Promise<IUser.SignInResponse>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async signIn(signinCreditDto: SigninCreditDto): Promise<IUser.SignInResponse> {
+  public async signIn(signinCreditDto: SigninCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const user = await this.userRepository.validateUserPassword(signinCreditDto);
       if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
-      } else {
-        const payload: JwtPayload = {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          licence: 'onepiece',
-        };
-        const accessToken = await this.jwtService.sign(payload);
-
-        return {
-          statusCode: 200,
-          status: 'success',
-          message: 'signin success',
-          accessToken,
-        };
+        this.logger.error('Invalid credentials', '', 'SignInError');
+        return new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            error: 'Invalid credentials',
+          },
+          HttpStatus.UNAUTHORIZED,
+        );
       }
+      const payload: IUser.JwtPayload = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        licence: 'onepiece',
+      };
+      const accessToken = await this.jwtService.sign(payload);
+      return this.httpResponse.StatusOK<string>(accessToken);
     } catch (error) {
-      this.logger.log(error.message, 'SignIn');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SignInError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
