@@ -1,41 +1,46 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { UserRepository } from './user.repository';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from './interfaces';
-import * as IUser from './interfaces';
 import { User } from './user.entity';
-import { config } from '../../config';
+import { UserRepository } from './user.repository';
+import { UserHandlerFactory } from '../handlers';
 import { UploadeService } from './uploads/cloudinary.service';
-import { UserHandlerFactory } from 'handlers';
+import HTTPResponse from '../libs/response';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserSearchDto } from './dto';
+import * as IShare from '../interfaces';
+import * as EUser from './enums';
+import * as IUser from './interfaces';
+import { config } from '../../config';
 
 @Injectable()
 export class UserService {
-  private logger: Logger = new Logger('UserService');
-  private redisClient = new Redis(config.REDIS_URL);
+  private readonly httpResponse: HTTPResponse = new HTTPResponse();
+  private readonly logger: Logger = new Logger('UserService');
+  private readonly redisClient = new Redis(config.REDIS_URL);
   constructor(
     @InjectRepository(UserRepository)
-    private userRepository: UserRepository,
-    private jwtService: JwtService,
-    private uploadService: UploadeService,
+    private readonly userRepository: UserRepository,
+    private readonly jwtService: JwtService,
+    private readonly uploadService: UploadeService,
   ) {}
 
   /**
    * @description Sign up user service action
    * @public
    * @param {UserCreditDto} userCreditDto
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async signUp(userCreditDto: UserCreditDto): Promise<IUser.ResponseBase> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
-      return await this.userRepository.signUp(userCreditDto);
+      const user = await this.userRepository.signUp(userCreditDto);
+      UserHandlerFactory.createUser(user);
+      return this.httpResponse.StatusCreated<string>('signup success');
     } catch (error) {
-      this.logger.log(error.message, 'SignUp');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SignUpError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -49,32 +54,32 @@ export class UserService {
    * @description Sign in user service action
    * @public
    * @param {SigninCreditDto} signinCreditDto
-   * @returns {Promise<IUser.SignInResponse>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async signIn(signinCreditDto: SigninCreditDto): Promise<IUser.SignInResponse> {
+  public async signIn(signinCreditDto: SigninCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const user = await this.userRepository.validateUserPassword(signinCreditDto);
       if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
-      } else {
-        const payload: JwtPayload = {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          licence: 'onepiece',
-        };
-        const accessToken = await this.jwtService.sign(payload);
-
-        return {
-          statusCode: 200,
-          status: 'success',
-          message: 'signin success',
-          accessToken,
-        };
+        this.logger.error('Invalid credentials', '', 'SignInError');
+        return new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            error: 'Invalid credentials',
+          },
+          HttpStatus.UNAUTHORIZED,
+        );
       }
+      const payload: IUser.JwtPayload = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        licence: 'onepiece',
+      };
+      const accessToken = await this.jwtService.sign(payload);
+      return this.httpResponse.StatusOK<string>(accessToken);
     } catch (error) {
-      this.logger.log(error.message, 'SignIn');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SignInError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -90,41 +95,36 @@ export class UserService {
    * @param {IUser.UserInfo} user
    * @returns {IUser.ResponseBase}
    */
-  public getUser(user: IUser.UserInfo): IUser.ResponseBase {
+  public getUser(user: IUser.UserInfo): IShare.IResponseBase<{ user: IUser.JwtPayload }> | HttpException {
     if (!user) {
-      throw new UnauthorizedException('No user existed');
-    }
-    return {
-      statusCode: 200,
-      status: 'success',
-      message: {
-        user: {
-          id: user.id,
-          role: user.role,
-          username: user.username,
-          licence: user.licence || 'onepiece',
-          email: user.email,
-          expiredDate: user.expiredDate,
+      this.logger.error('No user existed', '', 'GetUserError');
+      return new HttpException(
+        {
+          status: HttpStatus.UNAUTHORIZED,
+          error: 'No user existed',
         },
-      },
-    };
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+    return this.httpResponse.StatusOK<{ user: IUser.JwtPayload }>({ user: { id: user.id, role: user.role, username: user.username, licence: user.licence || 'onepiece', email: user.email } });
   }
 
   /**
    * @description Get users by information
    * @public
-   * @param {IUser.ISearch} searchDto
-   * @param {boolean} isAdmin
-   * @returns {Promise<{ users: User[]; count: number; } | Error>}
+   * @param {IUser.UserInfo | IUser.JwtPayload} user
+   * @param {UserSearchDto} searchDto
+   * @returns {Promise<IShare.IResponseBase<IShare.IUsersPagingResponseBase<User[]>> | HttpException>}
    */
-  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; take: number; skip: number; count: number } | Error> {
+  public async getUsers(user: IUser.UserInfo | IUser.JwtPayload, searchDto: UserSearchDto): Promise<IShare.IResponseBase<IShare.IUsersPagingResponseBase<User[]>> | HttpException> {
     try {
       if (!searchDto.keyword) searchDto.keyword = '';
       if (!searchDto.sort) searchDto.sort = 'DESC';
-
+      const isAdmin = user.role === EUser.EUserRole.ADMIN;
       const { users, count, take, skip } = await this.userRepository.getUsers(searchDto, isAdmin);
 
-      if (!users || !count)
+      if (!users || !count) {
+        this.logger.error('User Not Found', '', 'GetUsersError');
         return new HttpException(
           {
             status: HttpStatus.NOT_FOUND,
@@ -132,16 +132,11 @@ export class UserService {
           },
           HttpStatus.NOT_FOUND,
         );
-
-      return {
-        users,
-        take,
-        skip,
-        count,
-      };
+      }
+      return this.httpResponse.StatusOK({ users, take, skip, count });
     } catch (error) {
-      this.logger.log(error.message, 'GetUsers');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'GetUsersError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -155,23 +150,27 @@ export class UserService {
    * @description Get User by id
    * @public
    * @param {string} id
-   * @param {boolean} isAdmin
-   * @returns {Promise<User>}
+   * @param {IUser.UserInfo | IUser.JwtPayload} reqUser
+   * @returns {Promise<IShare.IResponseBase<{ user: User }> | HttpException>}
    */
-  public async getUserById(id: string, isAdmin: boolean): Promise<IUser.ResponseBase> {
+  public async getUserById(id: string, reqUser: IUser.UserInfo | IUser.JwtPayload): Promise<IShare.IResponseBase<{ user: User }> | HttpException> {
     try {
+      const isAdmin = reqUser.role === EUser.EUserRole.ADMIN;
       const user = await this.userRepository.getUserById(id, isAdmin);
-      if (!user) throw new NotFoundException();
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: {
-          user,
-        },
-      };
+      if (!user) {
+        this.logger.error(`User ${id} not found`, '', 'GetUserByidError');
+        return new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: `User ${id} not found`,
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      return this.httpResponse.StatusOK<{ user: User }>({ user });
     } catch (error) {
-      this.logger.log(error.message, 'GetUserById');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'GetUserByidError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -185,12 +184,19 @@ export class UserService {
    * @description Get user information from google login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException>}
    */
-  public async googleLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+  public async googleLogin(user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     // if google login redirect not success throw Exception
     if (!user) {
-      throw new UnauthorizedException('No user existed');
+      this.logger.error('No user existed', '', 'GoogleLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.UNAUTHORIZED,
+          error: 'No user existed',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     // if login success check for third party login repo process
     // check if user existed or not
@@ -201,36 +207,47 @@ export class UserService {
       email: user.email,
     });
 
-    if (signUpResult.status !== 'success') {
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: {
-          user,
+    if (typeof signUpResult !== 'string') {
+      this.logger.error('Google signup provider failed', '', 'GoogleLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Google signup provider failed',
         },
-      };
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    const mail_result = await this.mailSender(user, 'google', signUpResult.message);
-    if (!mail_result) throw new UnauthorizedException();
-    user.id = signUpResult.message;
-    return {
-      statusCode: 200,
-      status: 'success',
-      message: {
-        user,
-      },
-    };
+    const mail_result = await this.mailSender(user, 'google', signUpResult);
+    if (!mail_result) {
+      this.logger.error('Google signup mail failed', '', 'GoogleLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Google signup mail failed',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    user.id = signUpResult;
+    return this.httpResponse.StatusOK<{ user: IUser.UserInfo }>({ user });
   }
 
   /**
    * @description Get user information from facebook login callback redirect
    * @public
    * @param {IUser.UserInfo} user
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException>}
    */
-  public async fbLogin(user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+  public async fbLogin(user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     if (!user) {
-      throw new UnauthorizedException('No user existed');
+      this.logger.error('No user existed', '', 'GoogleLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.UNAUTHORIZED,
+          error: 'No user existed',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
     // if login success check for third party login repo process
     // check if user existed or not
@@ -241,45 +258,45 @@ export class UserService {
       email: user.email,
     });
 
-    if (signUpResult.status !== 'success') {
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: {
-          user,
+    if (typeof signUpResult !== 'string') {
+      this.logger.error('Facebook signup provider failed', '', 'FacebookLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Facebook signup provider failed',
         },
-      };
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-    const mail_result = await this.mailSender(user, 'facebook', signUpResult.message);
+    const mail_result = await this.mailSender(user, 'facebook', signUpResult);
     if (!mail_result) throw new UnauthorizedException();
-    user.id = signUpResult.message;
-    return {
-      statusCode: 200,
-      status: 'success',
-      message: {
-        user,
-      },
-    };
+    user.id = signUpResult;
+    return this.httpResponse.StatusOK<{ user: IUser.UserInfo }>({ user });
   }
 
   /**
    * @description Create user forget password first steps
    * @public
    * @param {UserForgetDto} userForgetDto
-   * @returns
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async createUserForget(userForgetDto: UserForgetDto): Promise<IUser.ResponseBase> {
+  public async createUserForget(userForgetDto: UserForgetDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const user: User = await this.userRepository.createUserForget(userForgetDto);
       const mail_result = await this.mailSender(user, 'forget');
-      if (!mail_result) throw new UnauthorizedException();
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Send mail success',
-      };
+      if (!mail_result) {
+        this.logger.error('User forget mail failed', '', 'CreateUserForgetError');
+        return new HttpException(
+          {
+            status: HttpStatus.INTERNAL_SERVER_ERROR,
+            error: 'User forget mail failed',
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+      return this.httpResponse.StatusOK<string>('Send mail success');
     } catch (error) {
-      this.logger.log(error.message, 'CreateUserForget');
+      this.logger.error(error.message, '', 'CreateUserForgetError');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -436,7 +453,7 @@ export class UserService {
         });
       }
     } catch (error) {
-      this.logger.log(error.message, 'MailHandler');
+      this.logger.error(error.message, '', 'MailHandlerError');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -453,28 +470,45 @@ export class UserService {
    * @param {VerifyKeyDto} verifyKeyDto
    * @returns {Promise<IUser.ResponseBase>}
    */
-  public async validateVerifyKey(verifyKeyDto: VerifyKeyDto): Promise<IUser.ResponseBase> {
+  public async validateVerifyKey(verifyKeyDto: VerifyKeyDto): Promise<IShare.IResponseBase<string> | HttpException> {
     const key_result = await this.redisClient.get(verifyKeyDto.key);
-    if (!key_result) throw new NotAcceptableException();
-    return {
-      statusCode: 200,
-      status: 'success',
-      message: 'Verify success',
-    };
+    if (!key_result) {
+      this.logger.error('Invalid verify key', '', 'ValidateVerifyKeyError');
+      return new HttpException(
+        {
+          status: HttpStatus.NOT_ACCEPTABLE,
+          error: 'Invalid verify key',
+        },
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+    return this.httpResponse.StatusOK<string>('Verify success');
   }
 
   /**
    * @description Verify user update password
    * @public
    * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IUser.ResponseBase> {
+  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const id = await this.redisClient.get(verifyUpdatePasswordDto.key);
-      return await this.userRepository.verifyUpdatePassword(verifyUpdatePasswordDto, id);
+      const user = await this.userRepository.verifyUpdatePassword(verifyUpdatePasswordDto, id);
+      if (!user) {
+        this.logger.error('Renew new password failed', '', 'VerifyUpdatePasswordError');
+        return new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            error: 'Renew new password failed',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      return this.httpResponse.StatusOK<string>('update password success');
     } catch (error) {
-      this.logger.log(error.message, 'VerifyUpdatePassword');
+      this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -491,15 +525,26 @@ export class UserService {
    * @param {UserUpdatePassDto} userUpdatePassword
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
+  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string, tokenId: string): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
-      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
-      return await this.userRepository.userUpdatePassword(userUpdatePassword, id);
+      if (id !== tokenId) {
+        this.logger.error('Invalid Id request', '', 'UserUpdatePasswordError');
+        return new HttpException(
+          {
+            status: HttpStatus.FORBIDDEN,
+            error: 'Invalid Id request',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      const user = await this.userRepository.userUpdatePassword(userUpdatePassword, id);
+      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      return this.httpResponse.StatusOK<string>('Update password success');
     } catch (error) {
-      this.logger.log(error.message, 'UserUpdatePassword');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'UserUpdatePasswordError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -541,10 +586,19 @@ export class UserService {
    * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
-    if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IShare.IResponseBase<User> | HttpException> {
+    if (id !== tokenId) {
+      this.logger.error('Invalid Id request', '', 'UpdateUserAdditionalInfoError');
+      return new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Invalid Id request',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
     const { files } = updateUserInfoDto;
     this.uploadService.uploadBatch(files);
     try {
@@ -558,13 +612,9 @@ export class UserService {
           profileImage: user_result.profileImage,
         });
       }
-      return {
-        statusCode: HttpStatus.CREATED,
-        status: 'success',
-        message: user_result,
-      };
+      return this.httpResponse.StatusOK<User>(user_result);
     } catch (error) {
-      this.logger.log(error.message, 'UpdateUserInfo');
+      this.logger.error(error.message, '', 'UpdateUserAdditionalInfoError');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -580,15 +630,26 @@ export class UserService {
    * @public
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<unknown> | HttpException>}
    */
-  public async softDeleteUser(id: string, tokenId: string): Promise<IUser.ResponseBase> {
+  public async softDeleteUser(id: string, tokenId: string): Promise<IShare.IResponseBase<unknown> | HttpException> {
     try {
-      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
-      return await this.userRepository.softDeleteUser(id);
+      if (id !== tokenId) {
+        this.logger.error('Invalid Id request', '', 'SoftDeleteUserError');
+        return new HttpException(
+          {
+            status: HttpStatus.FORBIDDEN,
+            error: 'Invalid Id request',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      await this.userRepository.softDeleteUser(id);
+      UserHandlerFactory.softDeleteUser({ id });
+      return this.httpResponse.StatusNoContent();
     } catch (error) {
-      this.logger.log(error.message, 'SoftDeleteUser');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SoftDeleteUserError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -602,19 +663,15 @@ export class UserService {
    * @description Log out an user
    * @public
    * @param {string} token
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async logOut(token: string): Promise<IUser.ResponseBase> {
+  public async logOut(token: string): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       await this.redisClient.lpush('blacklist', token);
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Logout success',
-      };
+      return this.httpResponse.StatusOK<string>('Logout success');
     } catch (error) {
-      this.logger.log(error.message, 'LogOut');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'LogOutError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
