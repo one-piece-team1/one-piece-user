@@ -3,7 +3,7 @@ import { Repository, EntityRepository, getManager, EntityManager, Like, Not } fr
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
-import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto } from './dto/index';
+import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto, UserSearchDto } from './dto/index';
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
@@ -43,7 +43,13 @@ export class UserRepository extends Repository<User> {
     return user;
   }
 
-  public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<IUser.ResponseBase> {
+  /**
+   * @description Third party signup
+   * @public
+   * @param {UserThirdDto} userThirdDto
+   * @returns {Promise<string>}
+   */
+  public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<string> {
     const { username, email } = userThirdDto;
     const user = new User();
     const tempPass = nanoid(10);
@@ -56,17 +62,13 @@ export class UserRepository extends Repository<User> {
       await user.save();
     } catch (error) {
       if (error.code === '23505') {
-        return {
-          statusCode: 409,
-          status: 'error',
-          message: 'User already existed',
-        };
+        throw new ConflictException(`Username: ${username} or Email: ${email} already exists`);
       } else {
-        return { statusCode: 500, status: 'error', message: error.message };
+        throw new InternalServerErrorException(error.message);
       }
     }
     UserHandlerFactory.createUser(user);
-    return { statusCode: 201, status: 'success', message: tempPass };
+    return tempPass;
   }
 
   /**
@@ -99,11 +101,11 @@ export class UserRepository extends Repository<User> {
   /**
    * @description Get users with pagination
    * @public
-   * @param {IUser.ISearch} searchDto
+   * @param {UserSearchDto} searchDto
    * @param {boolean} isAdmin
    * @returns {Promise<{ users: User[]; count: number; }>}
    */
-  public async getUsers(searchDto: IUser.ISearch, isAdmin: boolean): Promise<{ users: User[]; take: number; skip: number; count: number }> {
+  public async getUsers(searchDto: UserSearchDto, isAdmin: boolean): Promise<{ users: User[]; take: number; skip: number; count: number }> {
     const take = searchDto.take ? Number(searchDto.take) : 10;
     const skip = searchDto.skip ? Number(searchDto.skip) : 0;
 
@@ -139,7 +141,7 @@ export class UserRepository extends Repository<User> {
         count,
       };
     } catch (error) {
-      this.logger.log(error.message, 'GetUsers');
+      this.logger.error(error.message, '', 'GetUsersError');
       throw new InternalServerErrorException(error.message);
     }
   }
@@ -164,12 +166,12 @@ export class UserRepository extends Repository<User> {
       if (!isAdmin) findOpts.where.role = Not('admin');
 
       const user: User = await this.findOne(findOpts);
-      if (!user) throw new NotFoundException();
+      if (!user) return null;
       delete user.password;
       delete user.salt;
       return user;
     } catch (error) {
-      this.logger.log(error.message, 'GetUserById');
+      this.logger.error(error.message, '', 'GetUserByIdError');
       throw new InternalServerErrorException(error.message);
     }
   }
@@ -195,22 +197,18 @@ export class UserRepository extends Repository<User> {
    * @public
    * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
    * @param {string} id
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<User>}
    */
-  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto, id: string): Promise<IUser.ResponseBase> {
+  public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto, id: string): Promise<User> {
     try {
       const user = await this.findOne({ where: { id, status: true } });
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(verifyUpdatePasswordDto.password, user.salt);
       await user.save();
-      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'update password success',
-      };
+      return user;
     } catch (error) {
-      throw new InternalServerErrorException();
+      this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
+      throw new InternalServerErrorException(error.message);
     }
   }
 

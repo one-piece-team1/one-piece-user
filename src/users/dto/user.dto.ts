@@ -134,3 +134,20 @@ export class UpdateUserAdditionalInfoPublishDto extends UpdateUserAdditionalInfo
   @IsOptional()
   profileImage?: string;
 }
+
+export class UserSearchDto {
+  @IsOptional()
+  @IsNumber()
+  take?: number;
+
+  @IsOptional()
+  @IsNumber()
+  skip?: number;
+
+  @IsOptional()
+  @IsString()
+  keyword: string;
+
+  @IsOptional()
+  sort?: 'ASC' | 'DESC';
+}

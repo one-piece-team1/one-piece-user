@@ -1,10 +1,10 @@
-import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata, HttpException } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Get, Request, UseGuards, HttpStatus, Delete, Param, ParseUUIDPipe, Put, SetMetadata, HttpException, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as Express from 'express';
 import { RoleGuard } from './guards/local-guard';
 import { CurrentUser } from './get-user.decorator';
 import { User } from './user.entity';
-import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto } from './dto';
+import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserSearchDto } from './dto';
 import { UserService } from './user.service';
 import * as IShare from '../interfaces';
 import * as EUser from './enums';
@@ -21,18 +21,35 @@ export class UserController {
     return 'hello';
   }
 
+  /**
+   * @description Get user mem info routes
+   * @routes
+   * @get
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {IShare.IResponseBase<{ user: IUser.JwtPayload }> | HttpException}
+   */
   @Get('/info')
-  @UseGuards(AuthGuard(['jwt']))
-  getUser(@CurrentUser() user: IUser.UserInfo): IUser.ResponseBase {
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  getUser(@CurrentUser() user: IUser.UserInfo): IShare.IResponseBase<{ user: IUser.JwtPayload }> | HttpException {
     return this.userService.getUser(user);
   }
 
+  /**
+   * @description Get users with paging routes
+   * @routes
+   * @get
+   * @public
+   * @param {IUser.UserInfo | IUser.JwtPayload} user
+   * @param {UserSearchDto} userSearchDto
+   * @returns {Promise<IShare.IResponseBase<IShare.IUsersPagingResponseBase<User[]>> | HttpException>}
+   */
   @Get('/paging')
-  @UseGuards(AuthGuard(['jwt']))
-  getUsers(@Request() req: Express.Request): Promise<{ users: User[]; take: number; skip: number; count: number } | Error> {
-    const searchDto: IUser.ISearch = req.query;
-    const isAdmin: boolean = req.user['role'] === EUser.EUserRole.ADMIN;
-    return this.userService.getUsers(searchDto, isAdmin);
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  getUsers(@CurrentUser() user: IUser.UserInfo | IUser.JwtPayload, @Query(ValidationPipe) userSearchDto: UserSearchDto): Promise<IShare.IResponseBase<IShare.IUsersPagingResponseBase<User[]>> | HttpException> {
+    return this.userService.getUsers(user, userSearchDto);
   }
 
   @Get('/logout')
@@ -54,22 +71,47 @@ export class UserController {
     return HttpStatus.OK;
   }
 
+  /**
+   * @description Get specific user info routes
+   * @routes
+   * @get
+   * @public
+   * @param {IUser.UserInfo | IUser.JwtPayload} user
+   * @param {string} id
+   * @returns {Promise<IShare.IResponseBase<{ user: User }> | HttpException>}
+   */
   @Get('/:id/info')
-  @UseGuards(AuthGuard(['jwt']))
-  getUserById(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IUser.ResponseBase> {
-    const isAdmin: boolean = user['role'] === EUser.EUserRole.ADMIN;
-    return this.userService.getUserById(id, isAdmin);
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  getUserById(@CurrentUser() user: IUser.UserInfo | IUser.JwtPayload, @Param('id', ParseUUIDPipe) id: string): Promise<IShare.IResponseBase<{ user: User }> | HttpException> {
+    return this.userService.getUserById(id, user);
   }
 
+  /**
+   * @description Google login callback routes
+   * @routes
+   * @get
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException>}
+   */
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+  googleAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     return this.userService.googleLogin(user);
   }
 
+  /**
+   * @description facebook login callback routes
+   * @routes
+   * @get
+   * @public
+   * @param {IUser.UserInfo} user
+   * @returns {Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException>}
+   */
   @Get('/facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
-  fbAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IUser.ResponseBase> {
+  fbAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     return this.userService.fbLogin(user);
   }
 
@@ -99,18 +141,42 @@ export class UserController {
     return this.userService.signIn(signinCreditDto);
   }
 
+  /**
+   * @description Generates random verify key with mail sending routes
+   * @routes
+   * @post
+   * @public
+   * @param {UserForgetDto} userForgetDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Post('/forgets/generates')
-  createUserForget(@Body(ValidationPipe) userForgetDto: UserForgetDto): Promise<IUser.ResponseBase> {
+  createUserForget(@Body(ValidationPipe) userForgetDto: UserForgetDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.createUserForget(userForgetDto);
   }
 
+  /**
+   * @description Verify random key routes
+   * @routes
+   * @post
+   * @public
+   * @param {VerifyKeyDto} verifyKeyDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Post('/forgets/verifies')
-  validateVerifyKey(@Body(ValidationPipe) verifyKeyDto: VerifyKeyDto): Promise<IUser.ResponseBase> {
+  validateVerifyKey(@Body(ValidationPipe) verifyKeyDto: VerifyKeyDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.validateVerifyKey(verifyKeyDto);
   }
 
+  /**
+   * @description Update password with random key routes
+   * @routes
+   * @post
+   * @public
+   * @param {VerifyUpdatePasswordDto} verifyUpdatePasswordDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Post('/forgets/confirms')
-  verifyUpdatePassword(@Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IUser.ResponseBase> {
+  verifyUpdatePassword(@Body(ValidationPipe) verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
   }
 
