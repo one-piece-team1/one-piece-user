@@ -663,19 +663,15 @@ export class UserService {
    * @description Log out an user
    * @public
    * @param {string} token
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async logOut(token: string): Promise<IUser.ResponseBase> {
+  public async logOut(token: string): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       await this.redisClient.lpush('blacklist', token);
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Logout success',
-      };
+      return this.httpResponse.StatusOK<string>('Logout success');
     } catch (error) {
-      this.logger.log(error.message, 'LogOut');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'LogOutError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,

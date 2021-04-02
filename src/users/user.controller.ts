@@ -52,9 +52,18 @@ export class UserController {
     return this.userService.getUsers(user, userSearchDto);
   }
 
+  /**
+   * @description User logout routes
+   * @routes
+   * @get
+   * @public
+   * @param {Express.Request} req
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Get('/logout')
-  @UseGuards(AuthGuard(['jwt']))
-  logOut(@Request() req: Express.Request): Promise<IUser.ResponseBase> {
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  logOut(@Request() req: Express.Request): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.logOut(req.headers.authorization);
   }
 
@@ -191,7 +200,8 @@ export class UserController {
    * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
   @Post('/:id/informations/additionals')
-  @UseGuards(AuthGuard(['jwt']))
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
   updateUserAdditionalInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto): Promise<IShare.IResponseBase<User> | HttpException> {
     return this.userService.updateUserAdditionalInfo(updateUserInfoDto, id, user.id);
   }
@@ -207,7 +217,8 @@ export class UserController {
    * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
   @Put('/:id/password')
-  @UseGuards(AuthGuard(['jwt']))
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
   userUpdatePassword(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
   }
@@ -216,7 +227,8 @@ export class UserController {
    * @deprecated
    */
   @Put('/:id/subscribes')
-  @UseGuards(AuthGuard(['jwt']))
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
   updateSubscribePlan(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) updateSubPlan: UpdateSubscription): Promise<IUser.ResponseBase> {
     return this.userService.updateSubscribePlan(updateSubPlan, id, user.id);
   }
@@ -231,7 +243,8 @@ export class UserController {
    * @returns {Promise<IShare.IResponseBase<unknown> | HttpException>}
    */
   @Delete('/:id')
-  @UseGuards(AuthGuard(['jwt']))
+  @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
+  @UseGuards(AuthGuard(['jwt']), RoleGuard)
   softDeleteUser(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IShare.IResponseBase<unknown> | HttpException> {
     return this.userService.softDeleteUser(id, user.id);
   }
