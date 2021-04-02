@@ -525,15 +525,26 @@ export class UserService {
    * @param {UserUpdatePassDto} userUpdatePassword
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
    */
-  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
+  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string, tokenId: string): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
-      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
-      return await this.userRepository.userUpdatePassword(userUpdatePassword, id);
+      if (id !== tokenId) {
+        this.logger.error('Invalid Id request', '', 'UserUpdatePasswordError');
+        return new HttpException(
+          {
+            status: HttpStatus.FORBIDDEN,
+            error: 'Invalid Id request',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      const user = await this.userRepository.userUpdatePassword(userUpdatePassword, id);
+      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      return this.httpResponse.StatusOK<string>('Update password success');
     } catch (error) {
-      this.logger.log(error.message, 'UserUpdatePassword');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'UserUpdatePasswordError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -575,10 +586,19 @@ export class UserService {
    * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IUser.ResponseBase> {
-    if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
+  public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string, tokenId: string): Promise<IShare.IResponseBase<User> | HttpException> {
+    if (id !== tokenId) {
+      this.logger.error('Invalid Id request', '', 'UpdateUserAdditionalInfoError');
+      return new HttpException(
+        {
+          status: HttpStatus.FORBIDDEN,
+          error: 'Invalid Id request',
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
     const { files } = updateUserInfoDto;
     this.uploadService.uploadBatch(files);
     try {
@@ -592,13 +612,9 @@ export class UserService {
           profileImage: user_result.profileImage,
         });
       }
-      return {
-        statusCode: HttpStatus.CREATED,
-        status: 'success',
-        message: user_result,
-      };
+      return this.httpResponse.StatusOK<User>(user_result);
     } catch (error) {
-      this.logger.log(error.message, 'UpdateUserInfo');
+      this.logger.error(error.message, '', 'UpdateUserAdditionalInfoError');
       throw new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -614,15 +630,26 @@ export class UserService {
    * @public
    * @param {string} id
    * @param {string} tokenId
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<IShare.IResponseBase<unknown> | HttpException>}
    */
-  public async softDeleteUser(id: string, tokenId: string): Promise<IUser.ResponseBase> {
+  public async softDeleteUser(id: string, tokenId: string): Promise<IShare.IResponseBase<unknown> | HttpException> {
     try {
-      if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
-      return await this.userRepository.softDeleteUser(id);
+      if (id !== tokenId) {
+        this.logger.error('Invalid Id request', '', 'SoftDeleteUserError');
+        return new HttpException(
+          {
+            status: HttpStatus.FORBIDDEN,
+            error: 'Invalid Id request',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
+      await this.userRepository.softDeleteUser(id);
+      UserHandlerFactory.softDeleteUser({ id });
+      return this.httpResponse.StatusNoContent();
     } catch (error) {
-      this.logger.log(error.message, 'SoftDeleteUser');
-      throw new HttpException(
+      this.logger.error(error.message, '', 'SoftDeleteUserError');
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,

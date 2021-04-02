@@ -1,4 +1,4 @@
-import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, BeforeInsert, BeforeUpdate, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany, ManyToMany, AfterLoad, JoinTable } from 'typeorm';
+import { Entity, BaseEntity, PrimaryGeneratedColumn, Column, Unique, Index, BeforeInsert, BeforeUpdate, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany, ManyToMany, AfterLoad, JoinTable, VersionColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as EUser from './enums';
 import { Trip } from '../trips/trip.entity';
@@ -152,6 +152,12 @@ export class User extends BaseEntity {
   async countFollowings() {
     this.followingCount = this.following ? this.following.length : 0;
   }
+
+  /**
+   * @description version control
+   */
+  @VersionColumn({ nullable: true })
+  version: number;
 
   /**
    * @description Time area

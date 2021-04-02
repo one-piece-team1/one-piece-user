@@ -180,15 +180,35 @@ export class UserController {
     return this.userService.verifyUpdatePassword(verifyUpdatePasswordDto);
   }
 
+  /**
+   * @description Update user info routes
+   * @routes
+   * @post
+   * @public
+   * @param {IUser.UserInfo} user
+   * @param {string} id
+   * @param {UpdateUserAdditionalInfoInServerDto} updateUserInfoDto
+   * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
+   */
   @Post('/:id/informations/additionals')
   @UseGuards(AuthGuard(['jwt']))
-  updateUserAdditionalInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto) {
+  updateUserAdditionalInfo(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body() updateUserInfoDto: UpdateUserAdditionalInfoInServerDto): Promise<IShare.IResponseBase<User> | HttpException> {
     return this.userService.updateUserAdditionalInfo(updateUserInfoDto, id, user.id);
   }
 
+  /**
+   * @description Update user password routes
+   * @routes
+   * @put
+   * @public
+   * @param {IUser.UserInfo} user
+   * @param {string} id
+   * @param {UserUpdatePassDto} userUpdatePassDto
+   * @returns {Promise<IShare.IResponseBase<string> | HttpException>}
+   */
   @Put('/:id/password')
   @UseGuards(AuthGuard(['jwt']))
-  userUpdatePassword(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto): Promise<IUser.ResponseBase> {
+  userUpdatePassword(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) userUpdatePassDto: UserUpdatePassDto): Promise<IShare.IResponseBase<string> | HttpException> {
     return this.userService.userUpdatePassword(userUpdatePassDto, id, user.id);
   }
 
@@ -201,9 +221,18 @@ export class UserController {
     return this.userService.updateSubscribePlan(updateSubPlan, id, user.id);
   }
 
+  /**
+   * @description Soft delete user routes
+   * @routes
+   * @delete
+   * @public
+   * @param {IUser.UserInfo} user
+   * @param {string} id
+   * @returns {Promise<IShare.IResponseBase<unknown> | HttpException>}
+   */
   @Delete('/:id')
   @UseGuards(AuthGuard(['jwt']))
-  softDeleteUser(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IUser.ResponseBase> {
+  softDeleteUser(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string): Promise<IShare.IResponseBase<unknown> | HttpException> {
     return this.userService.softDeleteUser(id, user.id);
   }
 }

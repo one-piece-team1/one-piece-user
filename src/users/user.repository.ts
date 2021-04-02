@@ -1,4 +1,4 @@
-import { ConflictException, HttpException, HttpStatus, InternalServerErrorException, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, HttpException, HttpStatus, InternalServerErrorException, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Repository, EntityRepository, getManager, EntityManager, Like, Not } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -217,38 +217,17 @@ export class UserRepository extends Repository<User> {
    * @public
    * @param {UserUpdatePassDto} userUpdatePassword
    * @param {string} id
-   * @param {Promise<IUser.ResponseBase>}
+   * @param {Promise<User>}
    */
-  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string): Promise<IUser.ResponseBase> {
+  public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string): Promise<User> {
     const { newPassword, oldPassword } = userUpdatePassword;
     const user = await this.findOne({ where: { id, status: true } });
     // if no user throw not acceptable
-    if (!user)
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_ACCEPTABLE,
-          error: 'Invalid Password',
-        },
-        HttpStatus.NOT_ACCEPTABLE,
-      );
+    if (!user) throw new ForbiddenException('Invalid Password');
     // if password is wrong throw not acceptable
-    if (!(await user.validatePassword(oldPassword)))
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_ACCEPTABLE,
-          error: 'Invalid Password',
-        },
-        HttpStatus.NOT_ACCEPTABLE,
-      );
+    if (!(await user.validatePassword(oldPassword))) throw new ForbiddenException('Invalid Password');
     // if password is same as previous password throw not acceptable
-    if (await user.validatePassword(newPassword))
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_ACCEPTABLE,
-          error: 'Cannot use previous password',
-        },
-        HttpStatus.NOT_ACCEPTABLE,
-      );
+    if (await user.validatePassword(newPassword)) throw new ForbiddenException('Cannot use previous password');
     user.salt = await bcrypt.genSalt();
     user.password = await this.hashPassword(newPassword, user.salt);
     try {
@@ -260,12 +239,7 @@ export class UserRepository extends Repository<User> {
         throw new InternalServerErrorException(error.message);
       }
     }
-    UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
-    return {
-      statusCode: 200,
-      status: 'success',
-      message: 'Update password success',
-    };
+    return user;
   }
 
   /**
@@ -346,21 +320,17 @@ export class UserRepository extends Repository<User> {
    * @description Soft delete user
    * @public
    * @param {string} id
-   * @returns {Promise<IUser.ResponseBase>}
+   * @returns {Promise<boolean>}
    */
-  public async softDeleteUser(id: string): Promise<IUser.ResponseBase> {
+  public async softDeleteUser(id: string): Promise<boolean> {
     try {
       const user = await this.findOne({ where: { id, status: true } });
       if (!user) throw new NotAcceptableException();
       user.status = false;
       await user.save();
-      UserHandlerFactory.softDeleteUser({ id });
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Delete user success',
-      };
+      return true;
     } catch (error) {
+      this.logger.error(error.message, '', 'SoftDeleteUserError');
       throw new InternalServerErrorException();
     }
   }
