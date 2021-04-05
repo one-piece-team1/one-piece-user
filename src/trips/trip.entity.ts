@@ -1,4 +1,4 @@
-import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity, BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Post } from '../posts/post.entity';
 import * as ETrip from './enums';
@@ -53,6 +53,12 @@ export class Trip extends BaseEntity {
     (post) => post.trip,
   )
   posts: Post[];
+
+  /**
+   * @description version control
+   */
+  @VersionColumn({ nullable: true })
+  version: number;
 
   /**
    * @description Time area
