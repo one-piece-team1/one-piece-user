@@ -10,6 +10,7 @@ export const ormConfig: TypeOrmModuleOptions = {
   database: config.DB_SETTINGS.database,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
   migrations: [__dirname + './migration/*.ts'],
+  subscribers: [__dirname + '/../**/*.audit.{js,ts}'],
   synchronize: true,
   logging: false,
 };

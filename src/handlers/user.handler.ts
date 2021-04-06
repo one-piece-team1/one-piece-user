@@ -7,7 +7,8 @@ class UserHandler {
   // one server only listen to one exchange
   // seperate different event by type for different services
   private readonly onepieceTripExchange: string = 'onepiece-trip';
-  private readonly onepieceArticleExchange: string = 'onepiece-article';
+  private readonly onepieceLocationExchange: string = 'onepiece-location';
+  private readonly onepieceChatExchange: string = 'onepiece-chat';
 
   /**
    * @description Create user with microservice communication by RMQ
@@ -16,7 +17,7 @@ class UserHandler {
    * @returns {void}
    */
   public createUser(user: User): void {
-    const pubExchanges: string[] = [this.onepieceTripExchange];
+    const pubExchanges: string[] = [this.onepieceTripExchange, this.onepieceLocationExchange, this.onepieceChatExchange];
     pubExchanges.forEach((exchange: string) => {
       UserEventPublishersFactory.createPub(
         {
@@ -35,7 +36,7 @@ class UserHandler {
    * @returns {void}
    */
   public updateUserPassword(updatePasswordEventDto: UpdatePasswordEventDto): void {
-    const pubExchanges: string[] = [this.onepieceTripExchange];
+    const pubExchanges: string[] = [this.onepieceTripExchange, this.onepieceLocationExchange, this.onepieceChatExchange];
     pubExchanges.forEach((exchange: string) => {
       UserEventPublishersFactory.createPub(
         {
@@ -54,7 +55,7 @@ class UserHandler {
    * @returns {void}
    */
   public updateUserAdditionalInfo(updateUserAdditionalInfoPublishDto: UpdateUserAdditionalInfoPublishDto) {
-    const pubExchanges: string[] = [this.onepieceTripExchange];
+    const pubExchanges: string[] = [this.onepieceTripExchange, this.onepieceLocationExchange, this.onepieceChatExchange];
     pubExchanges.forEach((exchange: string) => {
       UserEventPublishersFactory.createPub(
         {
@@ -73,7 +74,7 @@ class UserHandler {
    * @returns {void}
    */
   public softDeleteUser(deleteUserEventDto: DeleteUserEventDto): void {
-    const pubExchanges: string[] = [this.onepieceTripExchange];
+    const pubExchanges: string[] = [this.onepieceTripExchange, this.onepieceLocationExchange, this.onepieceChatExchange];
     pubExchanges.forEach((exchange: string) => {
       UserEventPublishersFactory.createPub(
         {
