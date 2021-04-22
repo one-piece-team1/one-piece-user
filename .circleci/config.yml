@@ -9,7 +9,7 @@ jobs:
     executor: node/default
     steps:
       - checkout
-      - node/install-npm
+      - node/install-npm 
       - node/install-packages:
           app-dir: ~/one-piece-user
           cache-path: node_modules
@@ -19,22 +19,42 @@ jobs:
           paths:
             - .
 
-  test:
+  unit_and_integration:
     docker:
       - image: cimg/node:current
+        environment:
+          DBPORT: 5432
+          REDIS_URL: tcp://localhost:6379
+          REDIS_BLACKLIST_URL: tcp://localhost:6379
+      - image: kartoza/postgis:13.0
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123
+          POSTGRES_DB: onepiece,onepiece-test
+      - image: redis:alpine
+      - image: "rabbitmq:3-management"
     steps:
       - attach_workspace:
           at: .
       - run:
-          # no test yet
-          name: Test
-          command: sudo npm run build
+          name: Wait for service containers
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && nc -z localhost 5672 && nc -z localhost 6379 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for secondary containers && exit 1
+      - run:
+          name: test
+          command: npm run test
 
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
-      - test:
+      - unit_and_integration:
           requires:
             - build

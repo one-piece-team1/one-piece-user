@@ -14,11 +14,9 @@ import * as IUser from './interfaces';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('/test')
-  @SetMetadata('roles', [EUser.EUserRole.USER])
-  @UseGuards(AuthGuard(['jwt']), RoleGuard)
-  adminTest() {
-    return 'hello';
+  @Get('/')
+  healthCheck() {
+    return 'User Service healthy';
   }
 
   /**
