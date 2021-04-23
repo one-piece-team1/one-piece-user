@@ -1,17 +1,18 @@
 import { ConflictException, ForbiddenException, HttpException, HttpStatus, InternalServerErrorException, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { Repository, EntityRepository, getManager, EntityManager, Like, Not } from 'typeorm';
+import { Repository, EntityRepository, getManager, EntityManager, Like, Not, getRepository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { User } from './user.entity';
+import { UserHandlerFactory } from '../handlers';
 import { SigninCreditDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserCreditDto, UserForgetDto, UserThirdDto, UserUpdatePassDto, VerifyUpdatePasswordDto, UserSearchDto } from './dto/index';
+import { config } from '../../config';
 import * as IUser from './interfaces';
 import * as EUser from './enums';
 import * as utils from '../libs/utils';
-import { UserHandlerFactory } from '../handlers';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
-  private readonly repoManager: EntityManager = getManager();
+  private readonly connectionName: string = config.ENV === 'test' ? 'testConnection' : 'default';
   private readonly logger = new Logger('UserRepository');
   private readonly cloudinaryBaseUrl: string = 'https://res.cloudinary.com/ahoyapp/image/upload';
 
@@ -36,6 +37,7 @@ export class UserRepository extends Repository<User> {
         // throw 409 error when duplicate username
         throw new ConflictException(`Username: ${username} or Email: ${email} already exists`);
       } else {
+        /* istanbul ignore next */
         throw new InternalServerErrorException(error.message);
       }
     }
@@ -64,6 +66,7 @@ export class UserRepository extends Repository<User> {
       if (error.code === '23505') {
         throw new ConflictException(`Username: ${username} or Email: ${email} already exists`);
       } else {
+        /* istanbul ignore next */
         throw new InternalServerErrorException(error.message);
       }
     }
@@ -79,7 +82,7 @@ export class UserRepository extends Repository<User> {
    */
   public async validateUserPassword(signinCreditDto: SigninCreditDto): Promise<User> {
     const { email, password } = signinCreditDto;
-    const user = await this.findOne({ where: { email, status: true } });
+    const user = await getRepository(User, this.connectionName).findOne({ where: { email, status: true } });
     if (user && (await user.validatePassword(password))) {
       return user;
     } else {
@@ -133,7 +136,7 @@ export class UserRepository extends Repository<User> {
     }
 
     try {
-      const [users, count] = await this.repoManager.findAndCount(User, searchOpts);
+      const [users, count] = await getRepository(User, this.connectionName).findAndCount(searchOpts);
       return {
         users,
         take,
@@ -141,7 +144,7 @@ export class UserRepository extends Repository<User> {
         count,
       };
     } catch (error) {
-      this.logger.error(error.message, '', 'GetUsersError');
+      /* istanbul ignore next */
       throw new InternalServerErrorException(error.message);
     }
   }
@@ -165,7 +168,7 @@ export class UserRepository extends Repository<User> {
       // trial, user, vip can view each others data except admin data
       if (!isAdmin) findOpts.where.role = Not('admin');
 
-      const user: User = await this.findOne(findOpts);
+      const user: User = await getRepository(User, this.connectionName).findOne(findOpts);
       if (!user) return null;
       delete user.password;
       delete user.salt;
@@ -184,8 +187,8 @@ export class UserRepository extends Repository<User> {
   public async createUserForget(userForgetDto: UserForgetDto): Promise<User> {
     try {
       const { email } = userForgetDto;
-      const user = await this.findOne({ where: { email, status: true } });
-      if (!user) throw new UnauthorizedException();
+      const user = await getRepository(User, this.connectionName).findOne({ where: { email, status: true } });
+      if (!user) throw new UnauthorizedException('Invalid user');
       return user;
     } catch (error) {
       throw new InternalServerErrorException(error.message);
@@ -201,13 +204,13 @@ export class UserRepository extends Repository<User> {
    */
   public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto, id: string): Promise<User> {
     try {
-      const user = await this.findOne({ where: { id, status: true } });
+      const user = await getRepository(User, this.connectionName).findOne({ where: { id, status: true } });
       user.salt = await bcrypt.genSalt();
       user.password = await this.hashPassword(verifyUpdatePasswordDto.password, user.salt);
       await user.save();
       return user;
     } catch (error) {
-      this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
+      /* istanbul ignore next */
       throw new InternalServerErrorException(error.message);
     }
   }
@@ -221,7 +224,7 @@ export class UserRepository extends Repository<User> {
    */
   public async userUpdatePassword(userUpdatePassword: UserUpdatePassDto, id: string): Promise<User> {
     const { newPassword, oldPassword } = userUpdatePassword;
-    const user = await this.findOne({ where: { id, status: true } });
+    const user = await getRepository(User, this.connectionName).findOne({ where: { id, status: true } });
     // if no user throw not acceptable
     if (!user) throw new ForbiddenException('Invalid Password');
     // if password is wrong throw not acceptable
@@ -233,11 +236,8 @@ export class UserRepository extends Repository<User> {
     try {
       await user.save();
     } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('Update password conflict');
-      } else {
-        throw new InternalServerErrorException(error.message);
-      }
+      /* istanbul ignore next */
+      throw new InternalServerErrorException(error.message);
     }
     return user;
   }
@@ -251,16 +251,9 @@ export class UserRepository extends Repository<User> {
    * @returns {Promise<IUser.ResponseBase>}
    */
   public async updateSubscribePlan(updateSubPlan: UpdateSubscription, id: string): Promise<IUser.ResponseBase> {
-    const user = await this.findOne({ where: { id, status: true } });
+    const user = await getRepository(User, this.connectionName).findOne({ where: { id, status: true } });
 
-    if (!user)
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'User not found',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+    if (!user) throw new NotFoundException('User not found');
 
     user.role = updateSubPlan.role;
     user.expiredDate = utils.addMonths(new Date(Date.now()), updateSubPlan.subRange);
@@ -268,11 +261,8 @@ export class UserRepository extends Repository<User> {
     try {
       await user.save();
     } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('Update subscribe conflict');
-      } else {
-        throw new InternalServerErrorException(error.message);
-      }
+      /* istanbul ignore next */
+      throw new InternalServerErrorException(error.message);
     }
 
     return {
@@ -291,15 +281,8 @@ export class UserRepository extends Repository<User> {
    */
   public async updateUserAdditionalInfo(updateUserInfoDto: UpdateUserAdditionalInfoInServerDto, id: string): Promise<User> {
     const { gender, age, desc, files } = updateUserInfoDto;
-    const user = await this.findOne({ where: { id, status: true } });
-    if (!user)
-      throw new HttpException(
-        {
-          status: HttpStatus.NOT_FOUND,
-          error: 'User not found',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+    const user = await getRepository(User, this.connectionName).findOne({ where: { id, status: true } });
+    if (!user) throw new NotFoundException('User not found');
     if (gender) user.gender = gender;
     if (age) user.age = age;
     if (desc) user.desc = desc;
@@ -310,7 +293,7 @@ export class UserRepository extends Repository<User> {
     try {
       await user.save();
     } catch (error) {
-      this.logger.log(error.message, 'UpdateUserInfo');
+      /* istanbul ignore next */
       throw new InternalServerErrorException(error.message);
     }
     return user;
@@ -324,14 +307,14 @@ export class UserRepository extends Repository<User> {
    */
   public async softDeleteUser(id: string): Promise<boolean> {
     try {
-      const user = await this.findOne({ where: { id, status: true } });
-      if (!user) throw new NotAcceptableException();
+      const user = await getRepository(User, this.connectionName).findOne({ where: { id, status: true } });
+      if (!user) throw new NotFoundException('User not found');
       user.status = false;
       await user.save();
       return true;
     } catch (error) {
-      this.logger.error(error.message, '', 'SoftDeleteUserError');
-      throw new InternalServerErrorException();
+      /* istanbul ignore next */
+      throw new InternalServerErrorException(error.message);
     }
   }
 }
