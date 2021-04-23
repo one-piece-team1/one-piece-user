@@ -1,4 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 import { config } from '../../config';
 
 export const ormConfig: TypeOrmModuleOptions = {
@@ -14,3 +15,17 @@ export const ormConfig: TypeOrmModuleOptions = {
   synchronize: true,
   logging: false,
 };
+
+export const testOrmconfig = (entities): PostgresConnectionOptions => ({
+  type: 'postgres',
+  host: 'localhost',
+  port: 5432,
+  username: 'postgres',
+  password: '123',
+  database: 'onepiece-test',
+  entities,
+  synchronize: true,
+  dropSchema: true,
+  logging: false,
+  name: 'testConnection',
+});
