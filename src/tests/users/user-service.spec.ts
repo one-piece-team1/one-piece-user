@@ -249,12 +249,179 @@ describe('# User Service', () => {
         role: EUser.EUserRole.USER,
       };
       mockUserSearchDto = {};
-      const mockedUsers = await MockUser();
       userRepository.getUsers = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
       const result = await userService.getUsers(mockUserInfo, mockUserSearchDto);
       const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
       expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+  });
+
+  describe('# Get User by Id', () => {
+    afterEach(() => {
+      mockUserInfo = null;
+    });
+
+    it('Should return user `id` not found when no user is founded', async (done: jest.DoneCallback) => {
+      mockUserInfo = {
+        role: EUser.EUserRole.USER,
+      };
+      userRepository.getUserById = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.getUserById('testId', mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.NOT_FOUND);
+      expect(resultResponse.error).toEqual('User testId not found');
+      done();
+    });
+
+    it('Should be able to user when user is existed', async (done: jest.DoneCallback) => {
+      mockUserInfo = {
+        role: EUser.EUserRole.USER,
+      };
+      const mockedUser = await MockUser();
+      userRepository.getUserById = jest.fn().mockReturnValueOnce(mockedUser);
+      const result = await userService.getUserById(mockedUser.id, mockUserInfo);
+      const resultResponse = result as IShare.IResponseBase<{ user: User }>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message.user.id).toEqual(mockedUser.id);
+      done();
+    });
+
+    it('Should be able to return internal server error when exception is caught', async (done: jest.DoneCallback) => {
+      mockUserInfo = {
+        role: EUser.EUserRole.USER,
+      };
+      userRepository.getUserById = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.getUserById('testId', mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+  });
+
+  describe('# Google Login', () => {
+    afterEach(() => {
+      mockUserInfo = null;
+    });
+
+    it('Should return unauthorized error exception when user is not defined', async (done: jest.DoneCallback) => {
+      const result = await userService.googleLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.UNAUTHORIZED);
+      expect(resultResponse.error).toEqual('No user existed');
+      done();
+    });
+
+    it('Should return internal server error exception when google api provider went wrong', async (done: jest.DoneCallback) => {
+      mockUserInfo = {
+        username: '',
+        email: '',
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({});
+      const result = await userService.googleLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Google signup provider failed');
+      done();
+    });
+
+    it('Should return internal server error exception when mail handler is not working properly', async (done: jest.DoneCallback) => {
+      const mockUser = await MockUser();
+      mockUserInfo = {
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        role: mockUser.role,
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({ id: mockUser.id, tempPass: 'test123' });
+      userService.mailSender = jest.fn().mockImplementationOnce(() => Promise.resolve(undefined));
+      const result = await userService.googleLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Google signup mail failed');
+      done();
+    });
+
+    it('Should return user information from google', async (done: jest.DoneCallback) => {
+      const mockUser = await MockUser();
+      mockUserInfo = {
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        role: mockUser.role,
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({ id: mockUser.id, tempPass: 'test123' });
+      userService.mailSender = jest.fn().mockImplementationOnce(() => Promise.resolve(true));
+      const result = await userService.googleLogin(mockUserInfo);
+      const resultResponse = result as IShare.IResponseBase<{ user: IUser.UserInfo }>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message.user.id).toEqual(mockUser.id);
+      done();
+    });
+  });
+
+  describe('# Facebook Login', () => {
+    afterEach(() => {
+      mockUserInfo = null;
+    });
+
+    it('Should return unauthorized error exception when user is not defined', async (done: jest.DoneCallback) => {
+      const result = await userService.fbLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.UNAUTHORIZED);
+      expect(resultResponse.error).toEqual('No user existed');
+      done();
+    });
+
+    it('Should return internal server error exception when facebook api provider went wrong', async (done: jest.DoneCallback) => {
+      mockUserInfo = {
+        username: '',
+        email: '',
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({});
+      const result = await userService.fbLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Facebook signup provider failed');
+      done();
+    });
+
+    it('Should return internal server error exception when mail handler is not working properly', async (done: jest.DoneCallback) => {
+      const mockUser = await MockUser();
+      mockUserInfo = {
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        role: mockUser.role,
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({ id: mockUser.id, tempPass: 'test123' });
+      userService.mailSender = jest.fn().mockImplementationOnce(() => Promise.resolve(undefined));
+      const result = await userService.fbLogin(mockUserInfo);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Facebook signup mail failed');
+      done();
+    });
+
+    it('Should return user information from facebook', async (done: jest.DoneCallback) => {
+      const mockUser = await MockUser();
+      mockUserInfo = {
+        id: mockUser.id,
+        username: mockUser.username,
+        email: mockUser.email,
+        role: mockUser.role,
+      };
+      userRepository.thirdPartySignUp = jest.fn().mockReturnValueOnce({ id: mockUser.id, tempPass: 'test123' });
+      userService.mailSender = jest.fn().mockImplementationOnce(() => Promise.resolve(true));
+      const result = await userService.fbLogin(mockUserInfo);
+      const resultResponse = result as IShare.IResponseBase<{ user: IUser.UserInfo }>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message.user.id).toEqual(mockUser.id);
       done();
     });
   });

@@ -207,7 +207,7 @@ export class UserService {
       email: user.email,
     });
 
-    if (typeof signUpResult !== 'string') {
+    if (typeof signUpResult.id !== 'string' && typeof signUpResult.tempPass !== 'string') {
       this.logger.error('Google signup provider failed', '', 'GoogleLoginError');
       return new HttpException(
         {
@@ -217,7 +217,7 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const mail_result = await this.mailSender(user, 'google', signUpResult);
+    const mail_result = await this.mailSender(user, 'google', signUpResult.tempPass);
     if (!mail_result) {
       this.logger.error('Google signup mail failed', '', 'GoogleLoginError');
       return new HttpException(
@@ -228,7 +228,7 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    user.id = signUpResult;
+    user.id = signUpResult.id;
     return this.httpResponse.StatusOK<{ user: IUser.UserInfo }>({ user });
   }
 
@@ -258,7 +258,7 @@ export class UserService {
       email: user.email,
     });
 
-    if (typeof signUpResult !== 'string') {
+    if (typeof signUpResult.id !== 'string' && typeof signUpResult.tempPass !== 'string') {
       this.logger.error('Facebook signup provider failed', '', 'FacebookLoginError');
       return new HttpException(
         {
@@ -268,9 +268,18 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const mail_result = await this.mailSender(user, 'facebook', signUpResult);
-    if (!mail_result) throw new UnauthorizedException();
-    user.id = signUpResult;
+    const mail_result = await this.mailSender(user, 'facebook', signUpResult.tempPass);
+    if (!mail_result) {
+      this.logger.error('Facebook signup mail failed', '', 'FacebookLoginError');
+      return new HttpException(
+        {
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: 'Facebook signup mail failed',
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    user.id = signUpResult.id;
     return this.httpResponse.StatusOK<{ user: IUser.UserInfo }>({ user });
   }
 
@@ -309,14 +318,14 @@ export class UserService {
 
   /**
    * @description Mail Handler
-   * @private
+   * @public
    * @param {User | IUser.UserInfo} user
    * @param {IUser.TMailType} type
    * @returns {Promise<unknown>}
    */
-  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType): Promise<unknown>;
-  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass: string): Promise<unknown>;
-  private async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass?: string): Promise<unknown> {
+  public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType): Promise<unknown>;
+  public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass: string): Promise<unknown>;
+  public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass?: string): Promise<unknown> {
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',

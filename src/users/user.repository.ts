@@ -49,9 +49,9 @@ export class UserRepository extends Repository<User> {
    * @description Third party signup
    * @public
    * @param {UserThirdDto} userThirdDto
-   * @returns {Promise<string>}
+   * @returns {Promise<{ id: string; tempPass: string; }>}
    */
-  public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<string> {
+  public async thirdPartySignUp(userThirdDto: UserThirdDto): Promise<{ id: string; tempPass: string }> {
     const { username, email } = userThirdDto;
     const user = new User();
     const tempPass = nanoid(10);
@@ -71,7 +71,10 @@ export class UserRepository extends Repository<User> {
       }
     }
     UserHandlerFactory.createUser(user);
-    return tempPass;
+    return {
+      id: user.id,
+      tempPass,
+    };
   }
 
   /**
