@@ -115,7 +115,9 @@ describe('# User Repository', () => {
       };
       UserHandlerFactory.createUser = jest.fn().mockImplementationOnce(() => ({}));
       const result = await userRepository.thirdPartySignUp(mockThridCreateUserDto);
-      expect(typeof result).toEqual('string');
+      expect(typeof result).toEqual('object');
+      expect(typeof result.id).toEqual('string');
+      expect(typeof result.tempPass).toEqual('string');
       done();
     });
 

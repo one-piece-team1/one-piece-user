@@ -19,7 +19,7 @@ import { config } from '../../config';
 export class UserService {
   private readonly httpResponse: HTTPResponse = new HTTPResponse();
   private readonly logger: Logger = new Logger('UserService');
-  private readonly redisClient = new Redis(config.REDIS_URL);
+  public readonly redisClient: Redis.Redis = new Redis(config.REDIS_URL);
   constructor(
     @InjectRepository(UserRepository)
     private readonly userRepository: UserRepository,
@@ -292,6 +292,16 @@ export class UserService {
   public async createUserForget(userForgetDto: UserForgetDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const user: User = await this.userRepository.createUserForget(userForgetDto);
+      if (!user) {
+        this.logger.error('No user existed', '', 'CreateUserForgetError');
+        return new HttpException(
+          {
+            status: HttpStatus.UNAUTHORIZED,
+            error: 'No user existed',
+          },
+          HttpStatus.UNAUTHORIZED,
+        );
+      }
       const mail_result = await this.mailSender(user, 'forget');
       if (!mail_result) {
         this.logger.error('User forget mail failed', '', 'CreateUserForgetError');
@@ -306,7 +316,7 @@ export class UserService {
       return this.httpResponse.StatusOK<string>('Send mail success');
     } catch (error) {
       this.logger.error(error.message, '', 'CreateUserForgetError');
-      throw new HttpException(
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -326,6 +336,7 @@ export class UserService {
   public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType): Promise<unknown>;
   public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass: string): Promise<unknown>;
   public async mailSender(user: User | IUser.UserInfo, type: IUser.TMailType, tempPass?: string): Promise<unknown> {
+    /* istanbul ignore next */
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -503,6 +514,16 @@ export class UserService {
   public async verifyUpdatePassword(verifyUpdatePasswordDto: VerifyUpdatePasswordDto): Promise<IShare.IResponseBase<string> | HttpException> {
     try {
       const id = await this.redisClient.get(verifyUpdatePasswordDto.key);
+      if (!id) {
+        this.logger.error('Invalid validate key', '', 'VerifyUpdatePasswordError');
+        return new HttpException(
+          {
+            status: HttpStatus.NOT_ACCEPTABLE,
+            error: 'Invalid validate key',
+          },
+          HttpStatus.NOT_ACCEPTABLE,
+        );
+      }
       const user = await this.userRepository.verifyUpdatePassword(verifyUpdatePasswordDto, id);
       if (!user) {
         this.logger.error('Renew new password failed', '', 'VerifyUpdatePasswordError');
@@ -518,7 +539,7 @@ export class UserService {
       return this.httpResponse.StatusOK<string>('update password success');
     } catch (error) {
       this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
-      throw new HttpException(
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -549,6 +570,16 @@ export class UserService {
         );
       }
       const user = await this.userRepository.userUpdatePassword(userUpdatePassword, id);
+      if (!user) {
+        this.logger.error('User not found', '', 'UserUpdatePasswordError');
+        return new HttpException(
+          {
+            status: HttpStatus.FORBIDDEN,
+            error: 'User not found',
+          },
+          HttpStatus.FORBIDDEN,
+        );
+      }
       UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return this.httpResponse.StatusOK<string>('Update password success');
     } catch (error) {
@@ -572,6 +603,7 @@ export class UserService {
    * @param {string} tokenId
    * @returns {Promise<IUser.ResponseBase>}
    */
+  /* istanbul ignore next */
   public async updateSubscribePlan(updateSubPlan: UpdateSubscription, id: string, tokenId: string): Promise<IUser.ResponseBase> {
     try {
       if (id !== tokenId) throw new UnauthorizedException('Invalid Id request');
@@ -609,22 +641,33 @@ export class UserService {
       );
     }
     const { files } = updateUserInfoDto;
-    this.uploadService.uploadBatch(files);
+    /* istanbul ignore next */
+    if (files) {
+      this.uploadService.uploadBatch(files);
+    }
     try {
-      const user_result = await this.userRepository.updateUserAdditionalInfo(updateUserInfoDto, id);
-      if (user_result !== undefined) {
-        UserHandlerFactory.updateUserAdditionalInfo({
-          id: user_result.id,
-          gender: user_result.gender,
-          age: user_result.age,
-          desc: user_result.desc,
-          profileImage: user_result.profileImage,
-        });
+      const userResult = await this.userRepository.updateUserAdditionalInfo(updateUserInfoDto, id);
+      if (!userResult) {
+        this.logger.error('Update user additional information failed', '', 'UpdateUserAdditionalInfoError');
+        return new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            error: 'Update user additional information failed',
+          },
+          HttpStatus.CONFLICT,
+        );
       }
-      return this.httpResponse.StatusOK<User>(user_result);
+      UserHandlerFactory.updateUserAdditionalInfo({
+        id: userResult.id,
+        gender: userResult.gender,
+        age: userResult.age,
+        desc: userResult.desc,
+        profileImage: userResult.profileImage,
+      });
+      return this.httpResponse.StatusOK<User>(userResult);
     } catch (error) {
       this.logger.error(error.message, '', 'UpdateUserAdditionalInfoError');
-      throw new HttpException(
+      return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           error: error.message,
@@ -653,7 +696,17 @@ export class UserService {
           HttpStatus.FORBIDDEN,
         );
       }
-      await this.userRepository.softDeleteUser(id);
+      const result = await this.userRepository.softDeleteUser(id);
+      if (!result) {
+        this.logger.error('Soft delete user failed', '', 'SoftDeleteUserError');
+        return new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            error: 'Soft delete user failed',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
       UserHandlerFactory.softDeleteUser({ id });
       return this.httpResponse.StatusNoContent();
     } catch (error) {

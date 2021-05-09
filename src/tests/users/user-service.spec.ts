@@ -30,6 +30,11 @@ describe('# User Service', () => {
   let mockPayload: IUser.JwtPayload;
   let mockUserInfo: IUser.UserInfo;
   let mockUserSearchDto: UserSearchDto;
+  let mockUserForgetDto: UserForgetDto;
+  let mockVerifyKeyDto: VerifyKeyDto;
+  let mockVerifyUpdatePasswordDto: VerifyUpdatePasswordDto;
+  let mockUserUpdatePassDto: UserUpdatePassDto;
+  let mockUpdateUserAdditionalInfoInServerDto: UpdateUserAdditionalInfoInServerDto;
 
   beforeEach(async (done: jest.DoneCallback) => {
     const module: TestingModule = await Test.createTestingModule({
@@ -422,6 +427,308 @@ describe('# User Service', () => {
       expect(resultResponse.status).toEqual('success');
       expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
       expect(resultResponse.message.user.id).toEqual(mockUser.id);
+      done();
+    });
+  });
+
+  describe('# Create User Forget', () => {
+    afterEach(() => {
+      mockUserForgetDto = null;
+    });
+
+    it('Should return create user forget when user not existed', async (done: jest.DoneCallback) => {
+      mockUserForgetDto = {
+        email: '',
+      };
+      userRepository.createUserForget = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.createUserForget(mockUserForgetDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.UNAUTHORIZED);
+      expect(resultResponse.error).toEqual('No user existed');
+      done();
+    });
+
+    it('Should return create user forget when user not existed', async (done: jest.DoneCallback) => {
+      mockUserForgetDto = {
+        email: '',
+      };
+      const mockUser = await MockUser();
+      userRepository.createUserForget = jest.fn().mockReturnValueOnce(mockUser);
+      userService.mailSender = jest.fn().mockImplementation(() => Promise.resolve(undefined));
+      const result = await userService.createUserForget(mockUserForgetDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('User forget mail failed');
+      done();
+    });
+
+    it('Should return success result', async (done: jest.DoneCallback) => {
+      mockUserForgetDto = {
+        email: '',
+      };
+      const mockUser = await MockUser();
+      userRepository.createUserForget = jest.fn().mockReturnValueOnce(mockUser);
+      userService.mailSender = jest.fn().mockImplementation(() => Promise.resolve(true));
+      const result = await userService.createUserForget(mockUserForgetDto);
+      const resultResponse = result as IShare.IResponseBase<string>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual('Send mail success');
+      done();
+    });
+
+    it('Should return internal server error exception when mail handler is not working properly', async (done: jest.DoneCallback) => {
+      mockUserForgetDto = {
+        email: '',
+      };
+      userRepository.createUserForget = jest.fn().mockRejectedValueOnce(new Error('Invternal server error'));
+      const result = await userService.createUserForget(mockUserForgetDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Invternal server error');
+      done();
+    });
+  });
+
+  describe('# Validate Verify key', () => {
+    afterEach(() => {
+      mockVerifyKeyDto = null;
+    });
+
+    it('Should not validate verify key', async (done: jest.DoneCallback) => {
+      mockVerifyKeyDto = {
+        key: '',
+      };
+      userService.redisClient.get = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.validateVerifyKey(mockVerifyKeyDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+      expect(resultResponse.error).toEqual('Invalid verify key');
+      done();
+    });
+
+    it('Should validate verify key', async (done: jest.DoneCallback) => {
+      mockVerifyKeyDto = {
+        key: 'fakeKey',
+      };
+      userService.redisClient.get = jest.fn().mockReturnValueOnce('success');
+      const result = await userService.validateVerifyKey(mockVerifyKeyDto);
+      const resultResponse = result as IShare.IResponseBase<string>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual('Verify success');
+      done();
+    });
+  });
+
+  describe('# Verify Update Password', () => {
+    beforeEach(() => {
+      mockVerifyUpdatePasswordDto = {
+        key: '',
+        password: '',
+      };
+    });
+
+    afterEach(() => {
+      mockVerifyUpdatePasswordDto = null;
+    });
+
+    it('Should reject where key is not existing', async (done: jest.DoneCallback) => {
+      userService.redisClient.get = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.verifyUpdatePassword(mockVerifyUpdatePasswordDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+      expect(resultResponse.error).toEqual('Invalid validate key');
+      done();
+    });
+
+    it('Should reject where user password refreshing is not working', async (done: jest.DoneCallback) => {
+      userService.redisClient.get = jest.fn().mockReturnValueOnce('123');
+      userRepository.verifyUpdatePassword = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.verifyUpdatePassword(mockVerifyUpdatePasswordDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.CONFLICT);
+      expect(resultResponse.error).toEqual('Renew new password failed');
+      done();
+    });
+
+    it('Should success when every coditions matches', async (done: jest.DoneCallback) => {
+      const mockUser = await MockUser();
+      userService.redisClient.get = jest.fn().mockReturnValueOnce('123');
+      userRepository.verifyUpdatePassword = jest.fn().mockReturnValueOnce(mockUser);
+      UserHandlerFactory.updateUserPassword = jest.fn().mockImplementation(() => {});
+      const result = await userService.verifyUpdatePassword(mockVerifyUpdatePasswordDto);
+      const resultResponse = result as IShare.IResponseBase<string>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual('update password success');
+      done();
+    });
+
+    it('Should success when every coditions matches', async (done: jest.DoneCallback) => {
+      userService.redisClient.get = jest.fn().mockReturnValueOnce('123');
+      userRepository.verifyUpdatePassword = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.verifyUpdatePassword(mockVerifyUpdatePasswordDto);
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+  });
+
+  describe('# User Update Password', () => {
+    beforeEach(() => {
+      mockUserUpdatePassDto = {
+        oldPassword: '',
+        newPassword: '',
+      };
+    });
+
+    afterEach(() => {
+      mockUserUpdatePassDto = null;
+    });
+
+    it('Should return reject when id is invalid', async (done: jest.DoneCallback) => {
+      const result = await userService.userUpdatePassword(mockUserUpdatePassDto, '', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.FORBIDDEN);
+      expect(resultResponse.error).toEqual('Invalid Id request');
+      done();
+    });
+
+    it('Should return reject when user is invalid', async (done: jest.DoneCallback) => {
+      userRepository.userUpdatePassword = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.userUpdatePassword(mockUserUpdatePassDto, '123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.FORBIDDEN);
+      expect(resultResponse.error).toEqual('User not found');
+      done();
+    });
+
+    it('Should return reject when exception is caught', async (done: jest.DoneCallback) => {
+      userRepository.userUpdatePassword = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.userUpdatePassword(mockUserUpdatePassDto, '123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+
+    it('Should return reject when exception is caught', async (done: jest.DoneCallback) => {
+      const userMock = await MockUser();
+      userRepository.userUpdatePassword = jest.fn().mockReturnValueOnce(userMock);
+      UserHandlerFactory.updateUserPassword = jest.fn().mockImplementationOnce(() => {});
+      const result = await userService.userUpdatePassword(mockUserUpdatePassDto, '123', '123');
+      const resultResponse = result as IShare.IResponseBase<string>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual('Update password success');
+      done();
+    });
+  });
+
+  describe('# Update user additional information', () => {
+    beforeEach(() => {
+      mockUpdateUserAdditionalInfoInServerDto = {};
+    });
+
+    afterEach(() => {
+      mockUpdateUserAdditionalInfoInServerDto = null;
+    });
+
+    it('Should return reject when id is invalid', async (done: jest.DoneCallback) => {
+      const result = await userService.updateUserAdditionalInfo(mockUpdateUserAdditionalInfoInServerDto, '', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.FORBIDDEN);
+      expect(resultResponse.error).toEqual('Invalid Id request');
+      done();
+    });
+
+    it('Should return reject when update result is invalid', async (done: jest.DoneCallback) => {
+      userRepository.updateUserAdditionalInfo = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.updateUserAdditionalInfo(mockUpdateUserAdditionalInfoInServerDto, '123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.CONFLICT);
+      expect(resultResponse.error).toEqual('Update user additional information failed');
+      done();
+    });
+
+    it('Should return reject when update result is invalid', async (done: jest.DoneCallback) => {
+      userRepository.updateUserAdditionalInfo = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.updateUserAdditionalInfo(mockUpdateUserAdditionalInfoInServerDto, '123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+
+    it('Should return success when every conditioin is satisified', async (done: jest.DoneCallback) => {
+      const userMock = await MockUser();
+      userRepository.updateUserAdditionalInfo = jest.fn().mockReturnValueOnce(userMock);
+      UserHandlerFactory.updateUserAdditionalInfo = jest.fn().mockImplementationOnce(() => {});
+      const result = await userService.updateUserAdditionalInfo(mockUpdateUserAdditionalInfoInServerDto, '123', '123');
+      const resultResponse = result as IShare.IResponseBase<User>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual(userMock);
+      done();
+    });
+  });
+
+  describe('# Soft Delete User', () => {
+    it('Shoud return reject when id is invalid', async (done: jest.DoneCallback) => {
+      const result = await userService.softDeleteUser('', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.FORBIDDEN);
+      expect(resultResponse.error).toEqual('Invalid Id request');
+      done();
+    });
+
+    it('Shoud return reject when soft delete failed', async (done: jest.DoneCallback) => {
+      userRepository.softDeleteUser = jest.fn().mockReturnValueOnce(undefined);
+      const result = await userService.softDeleteUser('123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.CONFLICT);
+      expect(resultResponse.error).toEqual('Soft delete user failed');
+      done();
+    });
+
+    it('Shoud return reject when exception is caught', async (done: jest.DoneCallback) => {
+      userRepository.softDeleteUser = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.softDeleteUser('123', '123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
+      done();
+    });
+
+    it('Shoud return no content when soft delete success', async (done: jest.DoneCallback) => {
+      userRepository.softDeleteUser = jest.fn().mockReturnValueOnce(true);
+      const result = await userService.softDeleteUser('123', '123');
+      const resultResponse = result as IShare.IResponseBase<unknown>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.NO_CONTENT);
+      done();
+    });
+  });
+
+  describe('# Logout User', () => {
+    it('Should log out user', async (done: jest.DoneCallback) => {
+      userService.redisClient.lpush = jest.fn().mockReturnValueOnce(1);
+      const result = await userService.logOut('123');
+      const resultResponse = result as IShare.IResponseBase<string>;
+      expect(resultResponse.status).toEqual('success');
+      expect(resultResponse.statusCode).toEqual(HttpStatus.OK);
+      expect(resultResponse.message).toEqual('Logout success');
+      done();
+    });
+
+    it('Should return reject when exception is caught', async (done: jest.DoneCallback) => {
+      userService.redisClient.lpush = jest.fn().mockRejectedValueOnce(new Error('Internal Server Error'));
+      const result = await userService.logOut('123');
+      const resultResponse = (result as HttpException).getResponse() as IServerCustomExpcetion;
+      expect(resultResponse.status).toEqual(HttpStatus.INTERNAL_SERVER_ERROR);
+      expect(resultResponse.error).toEqual('Internal Server Error');
       done();
     });
   });
