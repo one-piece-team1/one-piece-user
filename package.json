@@ -134,7 +134,9 @@
       "src/libs",
       "src/subscribers",
       "src/publishers",
-      "src/handlers"
+      "src/handlers",
+      "src/users/strategy/facebook-strategy",
+      "src/users/strategy/google-strategy"
     ],
     "moduleFileExtensions": [
       "js",

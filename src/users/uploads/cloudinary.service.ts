@@ -20,6 +20,7 @@ export class UploadeService {
    * @private
    * @returns {Promise<boolean}
    */
+  /* istanbul ignore next */
   private isDirectoryExist(): Promise<boolean> {
     const path: string = join(process.cwd(), 'public/assets');
     return new Promise((resolve, reject) => {
@@ -37,11 +38,12 @@ export class UploadeService {
 
   /**
    * @description Create Write Stream
-   * @private
+   * @protected
    * @param {ITrip.BufferedFile} file
    * @returns {Promise<boolean>}
    */
-  private async writeStream(file: IUser.BufferedFile): Promise<boolean> {
+  /* istanbul ignore next */
+  public async writeStream(file: IUser.BufferedFile): Promise<boolean> {
     const isDir = await this.isDirectoryExist();
     if (!isDir) throw new InternalServerErrorException('Directory not existed');
 
