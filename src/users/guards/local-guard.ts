@@ -9,12 +9,12 @@ export class RoleGuard implements CanActivate {
 
   /**
    * @description Check if role can be activate or not
-   * @param {ExecutionContext} ctx
+   * @param {unknown} ctx
    * @returns {boolean}
    */
-  canActivate(ctx: ExecutionContext): boolean {
-    const roles = this.reflector.get<string[]>('roles', ctx.getHandler());
-    const role = ctx.switchToHttp().getRequest<Request>().user['role'];
+  canActivate(ctx: unknown): boolean {
+    const roles = this.reflector.get<string[]>('roles', (ctx as ExecutionContext).getHandler());
+    const role = (ctx as ExecutionContext).switchToHttp().getRequest<Request>().user['role'];
 
     // Grant all acess to admin
     if (role === EUser.EUserRole.ADMIN) return true;

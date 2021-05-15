@@ -1,13 +1,16 @@
 import { Logger } from '@nestjs/common';
-import { EntityManager, EntityRepository, getManager, Repository } from 'typeorm';
+import { getRepository, EntityRepository, Repository } from 'typeorm';
 import { Post } from './post.entity';
+import { config } from '../../config';
 
 @EntityRepository(Post)
 export class PostRepository extends Repository<Post> {
-  private readonly repoManager: EntityManager = getManager();
+  private readonly connectionName: string = config.ENV === 'test' ? 'testConnection' : 'default';
   private readonly logger: Logger = new Logger('PostRepository');
 
   public createPost(postReq: Post): void {
-    this.repoManager.save(Post, postReq).catch((err) => this.logger.log(err.message, 'CreatePost'));
+    getRepository(Post, this.connectionName)
+      .save(postReq)
+      .catch((err) => this.logger.log(err.message, 'CreatePost'));
   }
 }

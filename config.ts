@@ -56,6 +56,7 @@ const configs = {
     VERSION: packageVersionGetter(),
     API_EXPLORER_PATH: process.env.APPAPIEXPLORERPATH || '',
     // Server Setting
+    PROTOCL: process.env.APPPROTOCOL || 'http',
     HOST: process.env.APPHOST || 'localhost',
     PORT: process.env.APPPORT || 7071,
     

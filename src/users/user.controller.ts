@@ -14,11 +14,9 @@ import * as IUser from './interfaces';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('/test')
-  @SetMetadata('roles', [EUser.EUserRole.USER])
-  @UseGuards(AuthGuard(['jwt']), RoleGuard)
-  adminTest() {
-    return 'hello';
+  @Get('/')
+  healthCheck() {
+    return 'User Service healthy';
   }
 
   /**
@@ -69,6 +67,7 @@ export class UserController {
 
   @Get('/google')
   @UseGuards(AuthGuard('google'))
+  /* istanbul ignore next */
   googleAuth(): number {
     // didn't do anything due to i don't need to do any action
     return HttpStatus.OK;
@@ -76,6 +75,7 @@ export class UserController {
 
   @Get('/facebook')
   @UseGuards(AuthGuard('facebook'))
+  /* istanbul ignore next */
   fbAuth(): number {
     return HttpStatus.OK;
   }
@@ -106,6 +106,7 @@ export class UserController {
    */
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
+  /* istanbul ignore next */
   googleAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     return this.userService.googleLogin(user);
   }
@@ -120,6 +121,7 @@ export class UserController {
    */
   @Get('/facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
+  /* istanbul ignore next */
   fbAuthRedirect(@CurrentUser() user: IUser.UserInfo): Promise<IShare.IResponseBase<{ user: IUser.UserInfo }> | HttpException> {
     return this.userService.fbLogin(user);
   }
@@ -229,6 +231,7 @@ export class UserController {
   @Put('/:id/subscribes')
   @SetMetadata('roles', [EUser.EUserRole.USER, EUser.EUserRole.VIP1, EUser.EUserRole.VIP2, EUser.EUserRole.ADMIN])
   @UseGuards(AuthGuard(['jwt']), RoleGuard)
+  /* istanbul ignore next */
   updateSubscribePlan(@CurrentUser() user: IUser.UserInfo, @Param('id', ParseUUIDPipe) id: string, @Body(ValidationPipe) updateSubPlan: UpdateSubscription): Promise<IUser.ResponseBase> {
     return this.userService.updateSubscribePlan(updateSubPlan, id, user.id);
   }
