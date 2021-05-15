@@ -1,0 +1,194 @@
+# Orb 'circleci/node@3.0.1' resolved to 'circleci/node@3.0.1'
+version: 2
+jobs:
+  build:
+    docker:
+    - image: cimg/node:13.11
+    working_directory: ~/one-piece-user
+    steps:
+    - checkout
+    - run:
+        command: |
+          if [[ $EUID == 0 ]]; then export SUDO=""; else export SUDO="sudo"; fi
+
+          # FUNCTIONS
+          get_npm_version () {
+            if [[ latest == latest ]]; then
+              NPM_ORB_VERSION="$(npm view npm | sed -E 's|.*-||g' | grep latest | \
+                perl -pe 's/.*: //g' | perl -pe "s/'|,//g")"
+
+              echo "Latest version of NPM is $NPM_ORB_VERSION"
+            else
+              NPM_ORB_VERSION=latest
+
+              echo "Selected version of NPM is $NPM_ORB_VERSION"
+            fi
+          }
+
+          installation_check () {
+            if command -v npm > /dev/null 2>&1; then
+              if npm -v | grep "$NPM_ORB_VERSION" > /dev/null 2>&1; then
+                echo "NPM $NPM_ORB_VERSION is already installed"
+                exit 0
+              fi
+            fi
+          }
+
+          get_npm_version
+            installation_check
+
+            if [[ latest == latest ]]; then
+              $SUDO npm install -g npm@latest > /dev/null 2>&1 || \
+                npm install -g npm@latest > /dev/null 2>&1
+            else
+              $SUDO npm install -g "npm@$NPM_ORB_VERSION" > /dev/null 2>&1 || \
+                npm install -g "npm@$NPM_ORB_VERSION" > /dev/null 2>&1
+            fi
+
+            # test/verify version
+            if npm -v | grep "$NPM_ORB_VERSION" > /dev/null 2>&1; then
+              echo "Success! NPM $(npm -v) has been installed to $(which npm)"
+            else
+              echo "Something went wrong; the specified version of NPM could not be installed"
+              exit 1
+            fi
+        name: Install NPM
+    - run:
+        command: |
+          if [ ! -f "package.json" ]; then
+            echo
+            echo "---"
+            echo "Unable to find your package.json file. Did you forget to set the app-dir parameter?"
+            echo "---"
+            echo
+            echo "Current directory: $(pwd)"
+            echo
+            echo
+            echo "List directory: "
+            echo
+            ls
+            exit 1
+          fi
+        name: Checking for package.json.
+        working_directory: ~/one-piece-user
+    - restore_cache:
+        keys:
+        - node-deps-v1-{{ .Branch }}-{{ checksum "~/one-piece-user/package-lock.json" }}
+    - run:
+        command: |
+          if [[ ! -z "sudo npm i" ]]; then
+            echo "Running override package installation command:"
+            sudo npm i
+          else
+            npm ci
+          fi
+        name: Installing NPM packages
+        working_directory: ~/one-piece-user
+    - save_cache:
+        key: node-deps-v1-{{ .Branch }}-{{ checksum "~/one-piece-user/package-lock.json" }}
+        paths:
+        - node_modules
+    - persist_to_workspace:
+        root: .
+        paths:
+        - .
+  unit_and_integration:
+    docker:
+    - image: cimg/node:current
+      environment:
+        DBPORT: 5432
+        REDIS_URL: tcp://localhost:6379
+        REDIS_BLACKLIST_URL: tcp://localhost:6379
+    - image: kartoza/postgis:13.0
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 123
+        POSTGRES_DB: onepiece,onepiece-test
+    - image: redis:alpine
+    - image: rabbitmq:3-management
+    steps:
+    - attach_workspace:
+        at: .
+    - run:
+        name: Wait for service containers
+        command: |
+          for i in `seq 1 10`;
+          do
+            nc -z localhost 5432 && nc -z localhost 5672 && nc -z localhost 6379 && echo Success && exit 0
+            echo -n .
+            sleep 1
+          done
+          echo Failed waiting for secondary containers && exit 1
+    - run:
+        name: test
+        command: npm run test
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+    - build
+    - unit_and_integration:
+        requires:
+        - build
+
+# Original config.yml file:
+# version: 2.1
+# 
+# orbs:
+#   node: circleci/node@3.0.1
+# 
+# jobs:
+#   build:
+#     working_directory: ~/one-piece-user
+#     executor: node/default
+#     steps:
+#       - checkout
+#       - node/install-npm 
+#       - node/install-packages:
+#           app-dir: ~/one-piece-user
+#           cache-path: node_modules
+#           override-ci-command: sudo npm i
+#       - persist_to_workspace:
+#           root: .
+#           paths:
+#             - .
+# 
+#   unit_and_integration:
+#     docker:
+#       - image: cimg/node:current
+#         environment:
+#           DBPORT: 5432
+#           REDIS_URL: tcp://localhost:6379
+#           REDIS_BLACKLIST_URL: tcp://localhost:6379
+#       - image: kartoza/postgis:13.0
+#         environment:
+#           POSTGRES_USER: postgres
+#           POSTGRES_PASSWORD: 123
+#           POSTGRES_DB: onepiece,onepiece-test
+#       - image: redis:alpine
+#       - image: \"rabbitmq:3-management\"
+#     steps:
+#       - attach_workspace:
+#           at: .
+#       - run:
+#           name: Wait for service containers
+#           command: |
+#             for i in `seq 1 10`;
+#             do
+#               nc -z localhost 5432 && nc -z localhost 5672 && nc -z localhost 6379 && echo Success && exit 0
+#               echo -n .
+#               sleep 1
+#             done
+#             echo Failed waiting for secondary containers && exit 1
+#       - run:
+#           name: test
+#           command: npm run test
+# 
+# workflows:
+#   version: 2
+#   build_and_test:
+#     jobs:
+#       - build
+#       - unit_and_integration:
+#           requires:
+#             - build
