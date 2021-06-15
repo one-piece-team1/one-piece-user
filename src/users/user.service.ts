@@ -1,14 +1,17 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
 import { User } from './user.entity';
+import { UserEvent } from '../domains/user-events/entities/user-event.entity';
 import { UserRepository } from './user.repository';
 import { UserHandlerFactory } from '../handlers';
 import { UploadeService } from './uploads/cloudinary.service';
 import HTTPResponse from '../libs/response';
+import { AddUserEventCMD } from '../domains/user-events/commands/add-user-event.cmd';
 import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserSearchDto } from './dto';
 import * as IShare from '../interfaces';
 import * as EUser from './enums';
@@ -25,6 +28,8 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly uploadService: UploadeService,
+    private readonly comandBus: CommandBus,
+    private readonly queryBus: QueryBus,
   ) {}
 
   /**
@@ -33,13 +38,23 @@ export class UserService {
    * @param {UserCreditDto} userCreditDto
    * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async signUp(userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
+  public async signUp(userCreditDto: UserCreditDto, requestId?: string): Promise<IShare.IResponseBase<string> | IShare.IEventApiResponse<string> | HttpException> {
+    let event!: UserEvent;
     try {
+      if (requestId) {
+        event = <UserEvent>await this.comandBus.execute<AddUserEventCMD>(new AddUserEventCMD(requestId, EUser.EUserApiEventActionName.SIGNUP, [userCreditDto]));
+        const user = await this.userRepository.signUp(userCreditDto);
+        UserHandlerFactory.createUser(user);
+        return this.httpResponse.StatusCreated<string>('signup success', event.id);
+      }
       const user = await this.userRepository.signUp(userCreditDto);
       UserHandlerFactory.createUser(user);
       return this.httpResponse.StatusCreated<string>('signup success');
     } catch (error) {
       this.logger.error(error.message, '', 'SignUpError');
+      if (requestId) {
+        return this.httpResponse.InternalServerError<string>(error.message, event.id);
+      }
       return new HttpException(
         {
           status: HttpStatus.INTERNAL_SERVER_ERROR,

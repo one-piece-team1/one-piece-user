@@ -95,7 +95,12 @@ const configs = {
       protocol: process.env.EVENTSTOREPROTOCOL || 'amqp',
       hostname: process.env.EVENTSTOREHOSTNAME || 'localhost',
       tcpPort: process.env.EVENTSTORETCPPORT || 5672,
-      httpPort: process.env.EVENTSTOREHTTPPORT || 2113,
+      dbHost: process.env.EVENTSTOREHOSTNAME || 'localhost',
+      dbPort: process.env.EVENTSTOREDBPORT || 1113,
+      username: process.env.EVENTSTOREUSERNAME || 'postgres',
+      password: process.env.EVENTSTOREPASSWORD || '123',
+      database: process.env.EVENTSTOREDATABASE || 'onepiece',
+      schema: process.env.EVENTSTORESCHEMA || 'public',
       credentials: {
         username: process.env.EVENTSTORECREDENTIALSUSERNAME || 'lib-test',
         password: process.env.EVENTSTORECREDENTIALSPASSWORD || '12345678',
@@ -104,6 +109,16 @@ const configs = {
         min: process.env.EVENTSTOREPOOLOPTIONSMIN || 1,
         max: process.env.EVENTSTOREPOOLOPTIONSMAX || 10,
       },
+      bootstrapServers: process.env.KAFKA_BOOTSTRAP_SERVERS || 'localhost:9094',
+      secureProtocol: process.env.KAFKA_SECURITY_PROTOCOL || 'SASL_SSL',
+      saslMechanisms: process.env.KAFKA_SASL_MECHANISMS || 'PLAIN',
+      user: {
+        groupId: process.env.KAFKA_USER_CONSUMER_GROUP || 'onepiece-topic-user-groups',
+      },
+      topics: {
+        gateWayEvent: process.env.KAFKA_GATEWAY_EVENT_TOPIC || 'onepiece-gateway-event',
+        userEvent: process.env.KAFKA_USER_EVENT_TOPIC || 'onepiece-user-event',
+      }
     },
 
     DB_SETTINGS: {

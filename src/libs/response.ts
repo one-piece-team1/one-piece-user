@@ -20,9 +20,19 @@ export default class HTTPResponse {
    * @description Status Created
    * @public
    * @param {T} message
-   * @returns {IShare.IResponseBase<T>}
+   * @returns {IShare.IResponseBase<T> | IShare.IEventApiResponse<T>}
    */
-  StatusCreated<T>(message: T): IShare.IResponseBase<T> {
+  StatusCreated<T>(message: T): IShare.IResponseBase<T> | IShare.IEventApiResponse<T>;
+  StatusCreated<T>(message: T, id: string): IShare.IResponseBase<T> | IShare.IEventApiResponse<T>;
+  StatusCreated<T>(message: T, id?: string): IShare.IResponseBase<T> | IShare.IEventApiResponse<T> {
+    if (id) {
+      return Object.freeze({
+        id,
+        status: 'success',
+        statusCode: HttpStatus.CREATED,
+        message,
+      });
+    }
     return Object.freeze({
       status: 'success',
       statusCode: HttpStatus.CREATED,
@@ -132,7 +142,17 @@ export default class HTTPResponse {
    * @param {any} message
    * @returns {ResponseStatus}
    */
-  InternalServerError<T>(message: T): IShare.IResponseBase<T> {
+  InternalServerError<T>(message: T): IShare.IResponseBase<T> | IShare.IEventApiResponse<T>;
+  InternalServerError<T>(message: T, id: string): IShare.IResponseBase<T> | IShare.IEventApiResponse<T>;
+  InternalServerError<T>(message: T, id?: string): IShare.IResponseBase<T> | IShare.IEventApiResponse<T> {
+    if (id) {
+      return Object.freeze({
+        id,
+        status: 'error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message,
+      });
+    }
     return Object.freeze({
       status: 'error',
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

@@ -16,6 +16,20 @@ export const ormConfig: TypeOrmModuleOptions = {
   logging: false,
 };
 
+export const eventStoreConfig: PostgresConnectionOptions = {
+  type: 'postgres',
+  host: config.EVENT_STORE_SETTINGS.dbHost,
+  port: config.EVENT_STORE_SETTINGS.dbPort,
+  username: config.EVENT_STORE_SETTINGS.username,
+  password: config.EVENT_STORE_SETTINGS.password,
+  database: config.EVENT_STORE_SETTINGS.database,
+  entities: [__dirname + '/../**/*.entity.{js,ts}'],
+  migrations: [__dirname + './migration/*.ts'],
+  subscribers: [__dirname + '/../**/*.audit.{js,ts}'],
+  synchronize: true,
+  logging: false,
+};
+
 export const testOrmconfig = (entities): PostgresConnectionOptions => ({
   type: 'postgres',
   host: 'localhost',

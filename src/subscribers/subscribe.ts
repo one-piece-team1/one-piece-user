@@ -6,10 +6,22 @@ import { TripRepository } from '../trips/trip.repository';
 import { Trip } from '../trips/trip.entity';
 import { PostRepository } from '../posts/post.repository';
 import { Post } from '../posts/post.entity';
+import { UserService } from 'users/user.service';
 
-interface IReceiveEvent {
-  type: Event.TripEvent | Event.PostEvent;
-  data: Trip | Post;
+interface IAPIEvent {
+  id?: string;
+  path?: string;
+  headers?: Array<any>;
+  querys?: Array<any>;
+  params?: Array<any>;
+  body?: Array<any>;
+  files?: Array<any>;
+  cookies?: Array<any>;
+}
+
+interface IReceiveEvent extends IAPIEvent {
+  type?: Event.TripEvent | Event.PostEvent;
+  data?: Trip | Post;
 }
 
 /**
@@ -22,7 +34,7 @@ export class UserEventSubscribers {
   // seperate different event by type for different services
   private readonly defaultExchangeName: string = 'onepiece-user';
 
-  constructor(private readonly tripRepository: TripRepository, private readonly postRepository: PostRepository) {
+  constructor(private readonly userService: UserService, private readonly tripRepository: TripRepository, private readonly postRepository: PostRepository) {
     this.subscribeData('onepiece_user_queue');
   }
 
@@ -72,14 +84,31 @@ export class UserEventSubscribers {
    * @description Excute sub event and assign to responsable repository handler
    * @param {string} event
    */
-  execute(event) {
+  async execute(event) {
     const jsonEvent: IReceiveEvent = JSON.parse(event);
     this.logger.log(event, 'UserEventSubscribers');
-    switch (jsonEvent.type) {
-      case Event.TripEvent.CREATETRIP:
+    if (jsonEvent.path) {
+      const createUserRegex = new RegExp(Event.UserAPIEvent.CREATEUSER);
+      if (createUserRegex.test(jsonEvent.path)) {
+        const res = await this.userService.signUp(jsonEvent.body[0], jsonEvent.id);
+        console.log('res', res);
+        return;
+      }
+
+      const updateUserPasswordRegex = new RegExp(Event.UserAPIEvent.UPDATEUSERPASSWORD);
+      if (updateUserPasswordRegex.test(jsonEvent.path)) {
+        console.log('updateUserPasswordRegex:', jsonEvent);
+        return;
+      }
+    }
+
+    if (jsonEvent.type) {
+      if (jsonEvent.type === Event.TripEvent.CREATETRIP) {
         return this.tripRepository.createTrip(jsonEvent.data as Trip);
-      case Event.PostEvent.CREATEPOST:
+      }
+      if (jsonEvent.type === Event.PostEvent.CREATEPOST) {
         return this.postRepository.createPost(jsonEvent.data as Post);
+      }
     }
   }
 }
