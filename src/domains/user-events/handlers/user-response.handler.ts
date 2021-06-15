@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { UserKafkaProudcerService } from '../../../publishers/userevent.producer';
 import { ReseponseUserEventCMD } from '../commands/response-user-event.cmd';
-import * as IGeneral from '../../../interfaces'
+import * as IGeneral from '../../../interfaces';
 import { config } from '../../../../config';
 
 interface IUserResponseCommand {
