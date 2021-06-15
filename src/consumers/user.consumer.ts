@@ -44,7 +44,7 @@ export class UserKakfaConsumerService {
       const response = <IShare.IEventApiResponse<string>>await this.userService.signUp(jsonEvent.body[0], jsonEvent.id);
       return await this.userResponseKafkaService.register({
         id: response.id,
-        requetId: jsonEvent.id,
+        requestId: jsonEvent.id,
         type: EUser.EUserApiEventActionName.SIGNUP,
         response,
       });
