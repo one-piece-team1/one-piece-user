@@ -115,9 +115,21 @@ const configs = {
       user: {
         groupId: process.env.KAFKA_USER_CONSUMER_GROUP || 'onepiece-topic-user-groups',
       },
+      trip: {
+        groupId: process.env.KAFKA_TRIP_CONSUMER_GROUP || 'onepiece-topic-trip-groups',
+      },
+      locale: {
+        groupId: process.env.KAFKA_LOCALE_CONSUMER_GROUP || 'onepiece-topic-locale-groups',
+      },
+      chat: {
+        groupId: process.env.KAFKA_CHAT_CONSUMER_GROUP || 'onepiece-topic-chat-groups',
+      },
       topics: {
         gateWayEvent: process.env.KAFKA_GATEWAY_EVENT_TOPIC || 'onepiece-gateway-event',
         userEvent: process.env.KAFKA_USER_EVENT_TOPIC || 'onepiece-user-event',
+        tripEvent: process.env.KAFKA_TRIP_EVENT_TOPIC || 'onepiece-trip-event',
+        localeEvent: process.env.KAFKA_LOCALE_EVENT_TOPIC || 'onepiece-locale-event',
+        chatEvent: process.env.KAFKA_CHAT_EVENT_TOPIC || 'onepiece-chat-event',
       }
     },
 

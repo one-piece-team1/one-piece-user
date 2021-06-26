@@ -39,22 +39,7 @@ export class UserKakfaConsumerService {
   async register(kafkaMsg: Kafka.Message) {
     const kafkaEvt = kafkaMsg.value.toString();
     const jsonEvent: IAPIEvent = JSON.parse(kafkaEvt);
-    const createUserRegex = new RegExp(Event.UserAPIEvent.CREATEUSER);
-    if (createUserRegex.test(jsonEvent.path)) {
-      const response = <IShare.IEventApiResponse<string>>await this.userService.signUp(jsonEvent.body[0], jsonEvent.id);
-      return await this.userResponseKafkaService.register({
-        id: response.id,
-        requestId: jsonEvent.id,
-        type: EUser.EUserApiEventActionName.SIGNUP,
-        response,
-      });
-    }
-
-    const updateUserPasswordRegex = new RegExp(Event.UserAPIEvent.UPDATEUSERPASSWORD);
-    if (updateUserPasswordRegex.test(jsonEvent.path)) {
-      console.log('updateUserPasswordRegex:', jsonEvent);
-      return;
-    }
+    console.log('jsonEvent: ', jsonEvent);
   }
 
   /**

@@ -8,6 +8,6 @@ export class AddUserEventAggregate extends AggregateRoot {
   }
 
   public regsiterEvent(event: UserEvent) {
-    this.apply(new AddUserEventCMD(event.requestId, event.type, event.data));
+    this.apply(new AddUserEventCMD(event.type, event.data));
   }
 }

@@ -137,7 +137,8 @@
       "src/publishers",
       "src/handlers",
       "src/users/strategy/facebook-strategy",
-      "src/users/strategy/google-strategy"
+      "src/users/strategy/google-strategy",
+      "src/domains"
     ],
     "moduleFileExtensions": [
       "js",

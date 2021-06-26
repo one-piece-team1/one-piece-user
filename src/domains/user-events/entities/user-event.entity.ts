@@ -9,14 +9,14 @@ export class UserEvent {
   status: boolean;
 
   @Column({ type: 'varchar', nullable: false })
-  requestId: string;
-
-  @Column({ type: 'varchar', nullable: false })
   type: string;
 
   @Column({ type: 'jsonb', nullable: false })
-  data: Array<any>;
+  data: unknown;
 
-  @Column({ type: 'jsonb', nullable: true })
-  response?: Array<any>;
+  @Column({ type: 'simple-array', nullable: true })
+  targets?: string[];
+
+  @Column({ type: 'varchar', array: true, nullable: false, default: () => 'Array[]::varchar[]' })
+  topics: string[];
 }

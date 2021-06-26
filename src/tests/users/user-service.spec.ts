@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { User } from '../../users/user.entity';
 import { UserRepository } from '../../users/user.repository';
 import { UserService } from '../../users/user.service';
@@ -35,6 +36,8 @@ describe('# User Service', () => {
   let mockVerifyUpdatePasswordDto: VerifyUpdatePasswordDto;
   let mockUserUpdatePassDto: UserUpdatePassDto;
   let mockUpdateUserAdditionalInfoInServerDto: UpdateUserAdditionalInfoInServerDto;
+  let mockCommandBus: CommandBus;
+  let mockQueryBus: QueryBus;
 
   beforeEach(async (done: jest.DoneCallback) => {
     const module: TestingModule = await Test.createTestingModule({
@@ -68,6 +71,18 @@ describe('# User Service', () => {
             uploadBatch: jest.fn(),
           },
         },
+        {
+          provide: CommandBus,
+          useValue: {
+            execute: jest.fn(),
+          },
+        },
+        {
+          provide: QueryBus,
+          useValue: {
+            execute: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -75,6 +90,8 @@ describe('# User Service', () => {
     userRepository = module.get<UserRepository>(UserRepository);
     jwtService = module.get<JwtService>(JwtService);
     uploadeService = module.get<UploadeService>(UploadeService);
+    mockCommandBus = module.get<CommandBus>(CommandBus);
+    mockQueryBus = module.get<QueryBus>(QueryBus);
 
     done();
   });
@@ -103,7 +120,7 @@ describe('# User Service', () => {
       };
       const mockedUser = await MockUser();
       userRepository.signUp = jest.fn().mockReturnValueOnce(mockedUser);
-      UserHandlerFactory.createUser = jest.fn().mockImplementation(() => {});
+      mockCommandBus.execute = jest.fn().mockImplementation(() => {});
       const result = await userService.signUp(mockUserCreditDto);
       const resultResponse = result as IShare.IResponseBase<string>;
       expect(resultResponse.status).toEqual('success');

@@ -1,34 +1,32 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { UserKafkaProudcerService } from '../../../publishers/userevent.producer';
-import { ReseponseUserEventCMD } from '../commands/response-user-event.cmd';
 import * as IGeneral from '../../../interfaces';
 import { config } from '../../../../config';
 
-interface IUserResponseCommand {
+interface IUserServiceEventCommand {
   id: string;
-  requestId: string;
   type: string;
-  response: IGeneral.IEventApiResponse<any>;
 }
 
 class UserResponseCommand {
-  public constructor(public readonly requestId: string, public readonly type: string, public readonly response: any) {}
+  public constructor(public readonly id: string, public readonly type: string) {}
 }
 
 @Injectable()
 export class UserResponseKafkaService {
   private readonly logger: Logger = new Logger('UserResponseKafkaService');
-  private readonly topic = config.EVENT_STORE_SETTINGS.topics.gateWayEvent;
+  private readonly topics = [config.EVENT_STORE_SETTINGS.topics.tripEvent, config.EVENT_STORE_SETTINGS.topics.localeEvent, config.EVENT_STORE_SETTINGS.topics.chatEvent];
 
   constructor(private readonly comandBus: CommandBus, private readonly userKafkaProudcerService: UserKafkaProudcerService) {}
 
-  public async register(event: IUserResponseCommand) {
+  public async register(event: IUserServiceEventCommand) {
     try {
-      await this.comandBus.execute(new ReseponseUserEventCMD(event.id, [event.response]));
-      return this.userKafkaProudcerService.produce<UserResponseCommand>(this.topic, new UserResponseCommand(event.requestId, event.type, event.response), event.requestId);
+      this.topics.forEach((topic) => {
+        this.userKafkaProudcerService.produce<UserResponseCommand>(topic, new UserResponseCommand(event.id, event.type), event.id);
+      });
     } catch (error) {
-      this.logger.error(error.message, '', '');
+      this.logger.error(error.message, error.message, '');
       throw new Error(error.message);
     }
   }

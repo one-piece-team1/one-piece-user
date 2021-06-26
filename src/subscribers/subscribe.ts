@@ -6,7 +6,6 @@ import { TripRepository } from '../trips/trip.repository';
 import { Trip } from '../trips/trip.entity';
 import { PostRepository } from '../posts/post.repository';
 import { Post } from '../posts/post.entity';
-import { UserService } from 'users/user.service';
 
 interface IAPIEvent {
   id?: string;
@@ -34,7 +33,7 @@ export class UserEventSubscribers {
   // seperate different event by type for different services
   private readonly defaultExchangeName: string = 'onepiece-user';
 
-  constructor(private readonly userService: UserService, private readonly tripRepository: TripRepository, private readonly postRepository: PostRepository) {
+  constructor(private readonly tripRepository: TripRepository, private readonly postRepository: PostRepository) {
     this.subscribeData('onepiece_user_queue');
   }
 
@@ -86,29 +85,12 @@ export class UserEventSubscribers {
    */
   async execute(event) {
     const jsonEvent: IReceiveEvent = JSON.parse(event);
-    this.logger.log(event, 'UserEventSubscribers');
-    if (jsonEvent.path) {
-      const createUserRegex = new RegExp(Event.UserAPIEvent.CREATEUSER);
-      if (createUserRegex.test(jsonEvent.path)) {
-        const res = await this.userService.signUp(jsonEvent.body[0], jsonEvent.id);
-        console.log('res', res);
-        return;
-      }
-
-      const updateUserPasswordRegex = new RegExp(Event.UserAPIEvent.UPDATEUSERPASSWORD);
-      if (updateUserPasswordRegex.test(jsonEvent.path)) {
-        console.log('updateUserPasswordRegex:', jsonEvent);
-        return;
-      }
-    }
-
-    if (jsonEvent.type) {
-      if (jsonEvent.type === Event.TripEvent.CREATETRIP) {
+    console.log('execute_jsonEvent: ', jsonEvent);
+    switch (jsonEvent.type) {
+      case Event.TripEvent.CREATETRIP:
         return this.tripRepository.createTrip(jsonEvent.data as Trip);
-      }
-      if (jsonEvent.type === Event.PostEvent.CREATEPOST) {
+      case Event.PostEvent.CREATEPOST:
         return this.postRepository.createPost(jsonEvent.data as Post);
-      }
     }
   }
 }
