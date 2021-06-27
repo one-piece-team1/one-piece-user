@@ -10,7 +10,5 @@ import { ormConfig } from './config/orm.config';
 @Module({
   controllers: [HealthController],
   imports: [TypeOrmModule.forRoot(ormConfig), UserModule, TerminusModule, EventStoreDBModule],
-  providers: [...EventStoreDBProvider],
-  exports: [...EventStoreDBProvider],
 })
 export class AppModule {}

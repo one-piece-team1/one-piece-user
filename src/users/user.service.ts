@@ -11,6 +11,7 @@ import { UserHandlerFactory } from '../handlers';
 import { UploadeService } from './uploads/cloudinary.service';
 import HTTPResponse from '../libs/response';
 import { AddUserEventCMD } from '../domains/user-events/commands/add-user-event.cmd';
+import { UpdateUserPasswordEvent } from '../domains/user-events/commands/update-password-event.cmd';
 import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserSearchDto } from './dto';
 import * as Event from '../events';
 import * as IShare from '../interfaces';
@@ -541,7 +542,8 @@ export class UserService {
           HttpStatus.CONFLICT,
         );
       }
-      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      await this.comandBus.execute<UpdateUserPasswordEvent>(new UpdateUserPasswordEvent(Event.UserEvent.UPDATEUSERPASSWORD, { id, salt: user.salt, password: user.password }));
+      // UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return this.httpResponse.StatusOK<string>('update password success');
     } catch (error) {
       this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
@@ -586,7 +588,8 @@ export class UserService {
           HttpStatus.FORBIDDEN,
         );
       }
-      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      await this.comandBus.execute<UpdateUserPasswordEvent>(new UpdateUserPasswordEvent(Event.UserEvent.UPDATEUSERPASSWORD, { id, salt: user.salt, password: user.password }));
+      // UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return this.httpResponse.StatusOK<string>('Update password success');
     } catch (error) {
       this.logger.error(error.message, '', 'UserUpdatePasswordError');

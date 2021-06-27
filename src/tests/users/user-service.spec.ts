@@ -573,7 +573,7 @@ describe('# User Service', () => {
       const mockUser = await MockUser();
       userService.redisClient.get = jest.fn().mockReturnValueOnce('123');
       userRepository.verifyUpdatePassword = jest.fn().mockReturnValueOnce(mockUser);
-      UserHandlerFactory.updateUserPassword = jest.fn().mockImplementation(() => {});
+      mockCommandBus.execute = jest.fn().mockImplementation(() => {});
       const result = await userService.verifyUpdatePassword(mockVerifyUpdatePasswordDto);
       const resultResponse = result as IShare.IResponseBase<string>;
       expect(resultResponse.status).toEqual('success');
@@ -634,7 +634,7 @@ describe('# User Service', () => {
     it('Should return reject when exception is caught', async (done: jest.DoneCallback) => {
       const userMock = await MockUser();
       userRepository.userUpdatePassword = jest.fn().mockReturnValueOnce(userMock);
-      UserHandlerFactory.updateUserPassword = jest.fn().mockImplementationOnce(() => {});
+      mockCommandBus.execute = jest.fn().mockImplementationOnce(() => {});
       const result = await userService.userUpdatePassword(mockUserUpdatePassDto, '123', '123');
       const resultResponse = result as IShare.IResponseBase<string>;
       expect(resultResponse.status).toEqual('success');

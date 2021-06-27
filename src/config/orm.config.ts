@@ -17,6 +17,7 @@ export const ormConfig: TypeOrmModuleOptions = {
 };
 
 export const eventStoreConfig: PostgresConnectionOptions = {
+  name: 'eventStore',
   type: 'postgres',
   host: config.EVENT_STORE_SETTINGS.dbHost,
   port: config.EVENT_STORE_SETTINGS.dbPort,

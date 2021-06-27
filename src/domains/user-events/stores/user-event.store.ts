@@ -1,16 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { getRepository, Repository } from 'typeorm';
 import { UserEvent } from '../entities/user-event.entity';
 
 @Injectable()
 export class UserEventStoreRepository {
+  private readonly connName = 'eventStore';
+
   public constructor(
     @Inject('USEREVENT_REPOSITORY')
     private repository: Repository<UserEvent>,
   ) {}
 
   public async allAllUserEvent(): Promise<UserEvent[]> {
-    return await this.repository.find();
+    return await getRepository(UserEvent, this.connName).find();
   }
 
   public async getUserEventById(id: string): Promise<UserEvent> {
@@ -28,8 +30,8 @@ export class UserEventStoreRepository {
 
   private async createEvent(UserEventEntity: UserEvent): Promise<UserEvent | Error> {
     try {
-      const event = this.repository.create(UserEventEntity);
-      return await this.repository.save(event);
+      const event = getRepository(UserEvent, this.connName).create(UserEventEntity);
+      return await getRepository(UserEvent, this.connName).save(event);
     } catch (error) {
       return new Error(error);
     }
@@ -37,8 +39,8 @@ export class UserEventStoreRepository {
 
   private async updateEvent(id: string, UserEventEntity: UserEvent): Promise<UserEvent | Error> {
     try {
-      await this.repository.update({ id }, UserEventEntity);
-      return this.repository.findOne(id);
+      await getRepository(UserEvent, this.connName).update({ id }, UserEventEntity);
+      return getRepository(UserEvent, this.connName).findOne(id);
     } catch (error) {
       return new Error(error);
     }
