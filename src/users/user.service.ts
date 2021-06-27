@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger, NotAcceptableException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import Redis from 'ioredis';
 import { nanoid } from 'nanoid';
 import * as nodemailer from 'nodemailer';
@@ -9,7 +10,10 @@ import { UserRepository } from './user.repository';
 import { UserHandlerFactory } from '../handlers';
 import { UploadeService } from './uploads/cloudinary.service';
 import HTTPResponse from '../libs/response';
+import { AddUserEventCMD } from '../domains/user-events/commands/add-user-event.cmd';
+import { UpdateUserPasswordEvent } from '../domains/user-events/commands/update-password-event.cmd';
 import { SigninCreditDto, UserCreditDto, UserForgetDto, VerifyKeyDto, VerifyUpdatePasswordDto, UserUpdatePassDto, UpdateSubscription, UpdateUserAdditionalInfoInServerDto, UserSearchDto } from './dto';
+import * as Event from '../events';
 import * as IShare from '../interfaces';
 import * as EUser from './enums';
 import * as IUser from './interfaces';
@@ -25,6 +29,8 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
     private readonly uploadService: UploadeService,
+    private readonly comandBus: CommandBus,
+    private readonly queryBus: QueryBus,
   ) {}
 
   /**
@@ -33,10 +39,11 @@ export class UserService {
    * @param {UserCreditDto} userCreditDto
    * @returns {Promise<IShare.IResponseBase<User> | HttpException>}
    */
-  public async signUp(userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | HttpException> {
+  public async signUp(userCreditDto: UserCreditDto): Promise<IShare.IResponseBase<string> | IShare.IEventApiResponse<string> | HttpException> {
     try {
       const user = await this.userRepository.signUp(userCreditDto);
-      UserHandlerFactory.createUser(user);
+      await this.comandBus.execute<AddUserEventCMD>(new AddUserEventCMD(Event.UserEvent.CREATEUSER, user));
+      // UserHandlerFactory.createUser(user);
       return this.httpResponse.StatusCreated<string>('signup success');
     } catch (error) {
       this.logger.error(error.message, '', 'SignUpError');
@@ -535,7 +542,8 @@ export class UserService {
           HttpStatus.CONFLICT,
         );
       }
-      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      await this.comandBus.execute<UpdateUserPasswordEvent>(new UpdateUserPasswordEvent(Event.UserEvent.UPDATEUSERPASSWORD, { id, salt: user.salt, password: user.password }));
+      // UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return this.httpResponse.StatusOK<string>('update password success');
     } catch (error) {
       this.logger.error(error.message, '', 'VerifyUpdatePasswordError');
@@ -580,7 +588,8 @@ export class UserService {
           HttpStatus.FORBIDDEN,
         );
       }
-      UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
+      await this.comandBus.execute<UpdateUserPasswordEvent>(new UpdateUserPasswordEvent(Event.UserEvent.UPDATEUSERPASSWORD, { id, salt: user.salt, password: user.password }));
+      // UserHandlerFactory.updateUserPassword({ id, salt: user.salt, password: user.password });
       return this.httpResponse.StatusOK<string>('Update password success');
     } catch (error) {
       this.logger.error(error.message, '', 'UserUpdatePasswordError');

@@ -7,9 +7,20 @@ import { Trip } from '../trips/trip.entity';
 import { PostRepository } from '../posts/post.repository';
 import { Post } from '../posts/post.entity';
 
-interface IReceiveEvent {
-  type: Event.TripEvent | Event.PostEvent;
-  data: Trip | Post;
+interface IAPIEvent {
+  id?: string;
+  path?: string;
+  headers?: Array<any>;
+  querys?: Array<any>;
+  params?: Array<any>;
+  body?: Array<any>;
+  files?: Array<any>;
+  cookies?: Array<any>;
+}
+
+interface IReceiveEvent extends IAPIEvent {
+  type?: Event.TripEvent | Event.PostEvent;
+  data?: Trip | Post;
 }
 
 /**
@@ -72,9 +83,9 @@ export class UserEventSubscribers {
    * @description Excute sub event and assign to responsable repository handler
    * @param {string} event
    */
-  execute(event) {
+  async execute(event) {
     const jsonEvent: IReceiveEvent = JSON.parse(event);
-    this.logger.log(event, 'UserEventSubscribers');
+    console.log('execute_jsonEvent: ', jsonEvent);
     switch (jsonEvent.type) {
       case Event.TripEvent.CREATETRIP:
         return this.tripRepository.createTrip(jsonEvent.data as Trip);

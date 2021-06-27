@@ -10,3 +10,7 @@ export enum EUserGender {
   'MALE' = 'male',
   'FEMALE' = 'female',
 }
+
+export enum EUserApiEventActionName {
+  'SIGNUP' = 'signup',
+}
