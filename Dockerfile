@@ -20,10 +20,9 @@ RUN apk add --no-cache --virtual .gyp \
         make \
         g++ \
     && npm install \
+    && npm install request --save \
     && apk del .gyp
 
-RUN npm install
-RUN npm install request --save
 COPY . .
 RUN npm run build
 EXPOSE 7071 8080
