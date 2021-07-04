@@ -33,3 +33,6 @@ loadtests/
 tw-rental-data/
 ex.json
 data/
+
+# env
+.env
